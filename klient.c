@@ -1,6 +1,7 @@
 #include "common.h"
 
 int table_size, table_idx;
+//watki
 pthread_mutex_t group_lock = PTHREAD_MUTEX_INITIALIZER;
 int eaten_total = 0;
 int total_paid = 0;
@@ -26,13 +27,14 @@ void* person(void* arg) {
         order.mtype = getpid();
         order.price = 40 + (rand() % 3 * 10);
 
+
         if (msgsnd(msgid, &order, sizeof(int), IPC_NOWAIT) == 0) {
             pthread_mutex_lock(&group_lock);
             pending_special_orders++;
             pthread_mutex_unlock(&group_lock);
-            printf("[Klient %d-%d] Zamowil danie specjalne za %d zl. Czekamy...\n",
+            printf("\033[1;35m[Klient %d-%d] Zamowil danie specjalne za %d zl. Czekamy...\033[0m\n",
                 getpid(), info->id, order.price);
-            fflush(stdout); // Gwarancja wyœwietlenia komunikatu
+            fflush(stdout);
         }
     }
 
@@ -129,6 +131,7 @@ int main(int argc, char** argv) {
     pthread_t th[table_size];
     for (int i = 0; i < table_size; i++) pthread_create(&th[i], NULL, person, &info[i]);
     for (int i = 0; i < table_size; i++) pthread_join(th[i], NULL);
+
 
 
     printf("\n\033[1;33m[Grupa %d] KONIEC JEDZENIA. Laczny rachunek: %d zl. Wychodzimy.\033[0m\n",

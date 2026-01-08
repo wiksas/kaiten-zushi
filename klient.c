@@ -1,7 +1,6 @@
 #include "common.h"
 
 int table_size, table_idx;
-//watki
 pthread_mutex_t group_lock = PTHREAD_MUTEX_INITIALIZER;
 int eaten_total = 0;
 int total_paid = 0;
@@ -20,30 +19,30 @@ void* person(void* arg) {
     SharedData* sd = shmat(shmid, NULL, 0);
     int semid = semget(SEM_KEY, 6, 0600);
 
-
+    // 1. ZAMAWIANIE (Ka¿dy ma szansê, ale dziêki usleep ró¿ni klienci zamówi¹ w ró¿nym czasie)
     usleep(rand() % 500000);
     if (rand() % 100 < 20) {
         SpecialOrder order;
         order.mtype = getpid();
         order.price = 40 + (rand() % 3 * 10);
 
-
         if (msgsnd(msgid, &order, sizeof(int), IPC_NOWAIT) == 0) {
             pthread_mutex_lock(&group_lock);
             pending_special_orders++;
             pthread_mutex_unlock(&group_lock);
-            printf("\033[1;35m[Klient %d-%d] Zamowil danie specjalne za %d zl. Czekamy...\033[0m\n",
+            printf("[Klient %d-%d] Zamowil danie specjalne za %d zl. Czekamy...\n",
                 getpid(), info->id, order.price);
-            fflush(stdout);
+            fflush(stdout); // Gwarancja wyœwietlenia komunikatu
         }
     }
 
     while (!sd->emergency_exit && (eaten_total < target_to_eat || pending_special_orders > 0)) {
 
-
+        // --- LOSOWY REFLEKS ---
+        // To sprawia, ¿e nie zawsze osoba nr 1 pierwsza bierze talerzyk.
         usleep(100000 + (rand() % 900000));
 
-        sem_op(semid, 5, -1);
+        sem_op(semid, 5, -1); // Próba siêgniêcia na taœmê
 
         if (!sd->belt[table_idx].is_empty) {
             bool matches_pid = (sd->belt[table_idx].target_table_pid == getpid());
@@ -89,7 +88,7 @@ void* person(void* arg) {
 int main(int argc, char** argv) {
     if (argc < 3) exit(1);
 
-
+    // Kluczowe dla losowoœci ró¿nych grup
     srand(time(NULL) ^ getpid());
 
     table_size = atoi(argv[1]);
@@ -105,7 +104,7 @@ int main(int argc, char** argv) {
         if (info[i].age <= 10) kids++; else adults++;
     }
 
-
+    // Walidacja grupy
     if ((kids > 0 && adults == 0) || (kids > 3 * adults)) {
         printf("[Grupa %d] Nie spelniamy wymogow opieki. Odchodzimy.\n", getpid());
         exit(0);
@@ -132,11 +131,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < table_size; i++) pthread_create(&th[i], NULL, person, &info[i]);
     for (int i = 0; i < table_size; i++) pthread_join(th[i], NULL);
 
-
-
+    // --- KLUCZ DO WYŒWIETLENIA RACHUNKU ---
     printf("\n\033[1;33m[Grupa %d] KONIEC JEDZENIA. Laczny rachunek: %d zl. Wychodzimy.\033[0m\n",
         getpid(), total_paid);
-    fflush(stdout);
+    fflush(stdout); // Wymusza wypisanie tekstu przed zakoñczeniem procesu
 
     sem_op(semid, table_size, 1);
     shmdt(sdata);

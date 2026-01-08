@@ -107,7 +107,7 @@ int main() {
         suma_produkcji += wartosc;
         printf("Danie typ %d, %d sztuk, cena za sztuke %d\n", i + 1, ilosc, ceny_prod[i]);
     }
-    printf("LACZNA WARTOSC PRODUKCJI: %d zl\n", suma_produkcji);
+    printf("KOSZT PRODUKCJI: %d zl\n", suma_produkcji);
     printf("=======================================\n");
     printf("[Obsluga] Koniec zmiany\n");
     printf("=======================================\n");
@@ -115,8 +115,8 @@ int main() {
     printf("[Obsluga] RAPORT FINANSOWY:\n");
     int utarg_std = sdata->stats_sold[0] * 10 + sdata->stats_sold[1] * 15 + sdata->stats_sold[2] * 20;
     int utarg_total = utarg_std + sdata->stats_special_revenue;
-    printf(" Utarg: %d zl\n", utarg_total);
-    printf(" Zmarnowane jedzienie:\n \n");
+    printf(" przychod: %d zl\n", utarg_total);
+    printf(" Jedzenie na tasmie:\n \n");
 
     int wartosc_strat = 0;
     for (int i = 0; i < P; i++) {

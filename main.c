@@ -65,21 +65,30 @@ int main() {
 
     while (sdata->current_time < sdata->end_time && !sdata->emergency_exit) {
 
-
         usleep(1500000 + (rand() % 3000000));
-
 
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit) break;
 
         if (fork() == 0) {
             char s[3], v[2];
+
+
+            int is_vip = (rand() % 100 < 2);
+
             sprintf(s, "%d", (rand() % 4) + 1);
-            sprintf(v, "%d", (rand() % 100 < 10));
+            sprintf(v, "%d", is_vip);
+
+            if (is_vip) {
+                printf("\n\033[1;31m[System] !!! NADCHODZI GRUPA VIP !!! (PID: %d)\033[0m\n", getpid());
+            }
+
             execl("./klient", "klient", s, v, NULL);
             exit(0);
         }
         client_count++;
     }
+
+
 
     sdata->is_closed_for_new = true;
     printf("\n[Main] Godzina Tk wybita. Nie przyjmujemy nowych grup. Czekam na %d grup...\n", client_count);
@@ -87,7 +96,6 @@ int main() {
     int finished_clients = 0;
     while (finished_clients < client_count) {
         pid_t p = wait(NULL);
-        // Czekamy tylko na procesy klientów (nie kucharza/obs³ugê)
         if (p != kucharz_pid && p != obsluga_pid && p != kierownik_pid) {
             finished_clients++;
         }
@@ -102,7 +110,7 @@ int main() {
     int suma_produkcji = 0;
 
     for (int i = 0; i < 6; i++) {
-        int ilosc = sdata->stats_produced[i]; // Pobieramy zliczone dane
+        int ilosc = sdata->stats_produced[i];
         int wartosc = ilosc * ceny_prod[i];
         suma_produkcji += wartosc;
         printf("Danie typ %d, %d sztuk, cena za sztuke %d\n", i + 1, ilosc, ceny_prod[i]);

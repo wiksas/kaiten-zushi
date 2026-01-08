@@ -15,12 +15,13 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <time.h>
+#include <stdarg.h>
 
 #define P 20    // Pojemnoœæ taœmy
 #define SHM_KEY 123456
 #define SEM_KEY 123457
 #define MSG_KEY 123458
-
+#define LOG_FILE "logi.txt"
 
 typedef struct {
     int price;
@@ -50,11 +51,32 @@ typedef struct {
 } SpecialOrder;
 
 
+static inline void print_and_log(const char* format, ...) {
+    va_list args;
+
+    // 1. Wypisz na ekran (stdout)
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+    // 2. Wypisz do pliku
+    FILE* file = fopen(LOG_FILE, "a");
+    if (file != NULL) {
+        va_start(args, format);
+        vfprintf(file, format, args);
+        va_end(args);
+        fclose(file);
+    }
+}
+
+/* PODMIANA PRINTF: Od teraz ka¿dy printf w kodzie wywo³a print_and_log */
+#define printf(...) print_and_log(__VA_ARGS__)
+
 
 static inline void sem_op(int semid, int sem_num, int op) {
     struct sembuf sb = { sem_num, op, 0 };
     if (semop(semid, &sb, 1) == -1) {
-        // Jeœli semafor zosta³ usuniêty (EINVAL/EIDRM), koñczymy proces po cichu Jeœli operacja zosta³a przerwana sygna³em, próbujemy ponownie
+        // Jeœli semafor zosta³ usuniêty (EINVAL/EIDRM), koñczymy proces po cichu 
         if (errno == EINVAL || errno == EIDRM) {
             exit(0);
         }
@@ -62,6 +84,7 @@ static inline void sem_op(int semid, int sem_num, int op) {
             sem_op(semid, sem_num, op);
             return;
         }
+
         perror("B³¹d semop");
         exit(1);
     }

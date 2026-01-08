@@ -1,16 +1,25 @@
 #include "common.h"
+#include <time.h>
 
 int shmid, semid, msgid;
 SharedData* sdata = NULL;
 pid_t kucharz_pid, obsluga_pid, kierownik_pid;
 
+void emergency_cleanup(int sig) {
+    kill(0, SIGKILL);
+    if (sdata != NULL && sdata != (void*)-1) shmdt(sdata);
+    shmctl(shmid, IPC_RMID, NULL);
+    semctl(semid, 0, IPC_RMID);
+    msgctl(msgid, IPC_RMID, NULL);
+    exit(1);
+}
 
 void cleanup_ipc() {
-    printf("\n[Main] Konczenie pracy... Sprzatanie IPC.\n");
     if (kucharz_pid > 0) kill(kucharz_pid, SIGTERM);
     if (obsluga_pid > 0) kill(obsluga_pid, SIGTERM);
     if (kierownik_pid > 0) kill(kierownik_pid, SIGTERM);
-
+    usleep(100000);
+    kill(0, SIGKILL);
     if (sdata != NULL && sdata != (void*)-1) shmdt(sdata);
     shmctl(shmid, IPC_RMID, NULL);
     semctl(semid, 0, IPC_RMID);
@@ -22,50 +31,64 @@ void handle_sigint(int sig) { (void)sig; cleanup_ipc(); exit(0); }
 int main() {
     srand(time(NULL));
     signal(SIGINT, handle_sigint);
-
+    signal(SIGALRM, emergency_cleanup);
+    alarm(60);
 
     shmid = shmget(SHM_KEY, sizeof(SharedData), IPC_CREAT | 0600);
-    if (shmid == -1) { perror("shmget"); exit(1); }
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
 
     sdata->start_time = 600;
-    sdata->end_time = 610;
+    sdata->end_time = 615;
     sdata->current_time = sdata->start_time;
     sdata->open = true;
     sdata->emergency_exit = false;
     sdata->is_closed_for_new = false;
     sdata->kitchen_delay_us = 1000000;
 
-
-    for (int i = 0; i < 6; i++) { sdata->stats_produced[i] = 0; sdata->stats_sold[i] = 0; }
+    for (int i = 0; i < 6; i++) { sdata->stats_produced[i] = 0; if (i < 3) sdata->stats_sold[i] = 0; }
     sdata->stats_special_revenue = 0;
-    for (int i = 0; i < P; i++) sdata->belt[i].is_empty = true;
 
 
-    semid = semget(SEM_KEY, 6, IPC_CREAT | 0600);
+    for (int i = 0; i < P; i++) {
+        sdata->belt[i].is_empty = true;
+        sdata->current_occupancy[i] = 0;
+
+        if (i < LADA_LIMIT) sdata->table_capacity[i] = 1;
+        else if (i >= 6 && i <= 10) sdata->table_capacity[i] = 2;
+        else if (i >= 11 && i <= 15) sdata->table_capacity[i] = 3;
+        else if (i >= 16 && i <= 19) sdata->table_capacity[i] = 4;
+    }
+
+
+    semid = semget(SEM_KEY, 7, IPC_CREAT | 0600);
     semctl(semid, 0, SETVAL, 1);
-    for (int i = 1; i <= 4; i++) semctl(semid, i, SETVAL, 5);
+    semctl(semid, 1, SETVAL, 0);
+
+
+    semctl(semid, 2, SETVAL, 5 * 2);
+    semctl(semid, 3, SETVAL, 5 * 3);
+    semctl(semid, 4, SETVAL, 4 * 4);
+
     semctl(semid, 5, SETVAL, 1);
+    semctl(semid, 6, SETVAL, LADA_LIMIT);
+
     msgid = msgget(MSG_KEY, IPC_CREAT | 0600);
 
 
-    kucharz_pid = fork();
-    if (kucharz_pid == 0) execl("./kucharz", "kucharz", NULL);
-
-    obsluga_pid = fork();
-    if (obsluga_pid == 0) execl("./obsluga", "obsluga", NULL);
-
-    kierownik_pid = fork();
-    if (kierownik_pid == 0) execl("./kierownik", "kierownik", NULL);
+    if ((kucharz_pid = fork()) == 0) execl("./kucharz", "kucharz", NULL);
+    if ((obsluga_pid = fork()) == 0) execl("./obsluga", "obsluga", NULL);
+    if ((kierownik_pid = fork()) == 0) execl("./kierownik", "kierownik", NULL);
 
     int client_count = 0;
-    printf("[Main] Restauracja otwarta. Tp: %02d:%02d\n", sdata->start_time / 60, sdata->start_time % 60);
+    printf("[Main] Start restauracji.\n");
 
 
     while (sdata->current_time < sdata->end_time && !sdata->emergency_exit) {
 
-        usleep(1500000 + (rand() % 3000000));
+        // 1. LOSOWY CZAS PRZYBYCIA
+        // Czeka od 0.5 sekundy (500000 us) do 3.5 sekundy (3500000 us)
+        usleep(500000 + (rand() % 3000000));
 
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit) break;
 
@@ -73,14 +96,14 @@ int main() {
             char s[3], v[2];
 
 
+            int g_size = (rand() % 4) + 1;
             int is_vip = (rand() % 100 < 2);
 
-            sprintf(s, "%d", (rand() % 4) + 1);
+            sprintf(s, "%d", g_size);
             sprintf(v, "%d", is_vip);
 
-            if (is_vip) {
-                printf("\n\033[1;31m[System] !!! NADCHODZI GRUPA VIP !!! (PID: %d)\033[0m\n", getpid());
-            }
+            if (is_vip) printf("\n\033[1;31m[System] !!! NADCHODZI GRUPA VIP (%d os.) !!!\033[0m\n", g_size);
+            else printf("[System] Nowa grupa klientów: %d os.\n", g_size);
 
             execl("./klient", "klient", s, v, NULL);
             exit(0);
@@ -88,59 +111,52 @@ int main() {
         client_count++;
     }
 
-
-
     sdata->is_closed_for_new = true;
-    printf("\n[Main] Godzina Tk wybita. Nie przyjmujemy nowych grup. Czekam na %d grup...\n", client_count);
+    printf("\n[Main] Koniec wpuszczania. Czekam na %d grup...\n", client_count);
 
-    int finished_clients = 0;
-    while (finished_clients < client_count) {
+    int finished = 0;
+    while (finished < client_count) {
         pid_t p = wait(NULL);
-        if (p != kucharz_pid && p != obsluga_pid && p != kierownik_pid) {
-            finished_clients++;
-        }
+        if (p == -1) break;
+        if (p != kucharz_pid && p != obsluga_pid && p != kierownik_pid) finished++;
     }
 
     sdata->open = false;
-    usleep(500000);
+    kill(kucharz_pid, SIGTERM);
+    kill(obsluga_pid, SIGTERM);
+    kill(kierownik_pid, SIGTERM);
+    usleep(200000);
 
     printf("\n=======================================\n");
     printf("[Kucharz] RAPORT PRODUKCJI:\n");
-    int ceny_prod[] = { 10, 15, 20, 40, 50, 60 };
-    int suma_produkcji = 0;
-
+    int ceny[] = { 10, 15, 20, 40, 50, 60 };
+    int suma = 0;
     for (int i = 0; i < 6; i++) {
         int ilosc = sdata->stats_produced[i];
-        int wartosc = ilosc * ceny_prod[i];
-        suma_produkcji += wartosc;
-        printf("Danie typ %d, %d sztuk, cena za sztuke %d\n", i + 1, ilosc, ceny_prod[i]);
+        int wartosc = ilosc * ceny[i];
+        suma += wartosc;
+        printf("Danie typ %d, %d sztuk, cena %d zl\n", i + 1, ilosc, ceny[i]);
     }
-    printf("KOSZT PRODUKCJI: %d zl\n", suma_produkcji);
-    printf("=======================================\n");
-    printf("[Obsluga] Koniec zmiany\n");
-    printf("=======================================\n");
+    printf("KOSZT PRODUKCJI: %d zl\n", suma);
 
+    printf("=======================================\n");
     printf("[Obsluga] RAPORT FINANSOWY:\n");
-    int utarg_std = sdata->stats_sold[0] * 10 + sdata->stats_sold[1] * 15 + sdata->stats_sold[2] * 20;
-    int utarg_total = utarg_std + sdata->stats_special_revenue;
-    printf(" przychod: %d zl\n", utarg_total);
-    printf(" Jedzenie na tasmie:\n \n");
+    int utarg = 0;
+    for (int i = 0; i < 3; i++) utarg += sdata->stats_sold[i] * ceny[i];
+    utarg += sdata->stats_special_revenue;
+    printf(" Przychod: %d zl\n", utarg);
+    printf(" Jedzenie na tasmie (Straty):\n");
 
-    int wartosc_strat = 0;
+    int straty = 0;
     for (int i = 0; i < P; i++) {
         if (!sdata->belt[i].is_empty) {
-            int p = sdata->belt[i].price;
-            int typ = 0;
-            // Mapowanie ceny na typ
-            if (p == 10) typ = 1; else if (p == 15) typ = 2; else if (p == 20) typ = 3;
-            else if (p == 40) typ = 4; else if (p == 50) typ = 5; else if (p == 60) typ = 6;
-
-            printf("Pozycja %2d: Danie typu %d o wartosci %d zl\n", i, typ, p);
-            wartosc_strat += p;
+            printf(" Pozycja %2d: %d zl\n", i, sdata->belt[i].price);
+            straty += sdata->belt[i].price;
         }
     }
-    printf("\nLACZNA WARTOSC STRAT: %d zl\n", wartosc_strat);
+    printf("\nLACZNA WARTOSC STRAT: %d zl\n", straty);
     printf("=======================================\n");
+
     cleanup_ipc();
     return 0;
 }

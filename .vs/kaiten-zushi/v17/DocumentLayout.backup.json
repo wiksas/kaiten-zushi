@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\klient.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:klient.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:main.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\kucharz.c||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -37,7 +37,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
@@ -65,13 +65,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "klient.c",
               "DocumentMoniker": "C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\klient.c",
               "RelativeDocumentMoniker": "klient.c",
               "ToolTip": "C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\klient.c",
               "RelativeToolTip": "klient.c",
-              "ViewState": "AgIAAG8AAAAAAAAAAADwv5QAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAgwHgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2025-12-27T17:34:38.052Z",
               "EditorCaption": ""
@@ -98,18 +98,17 @@
               "RelativeToolTip": "kucharz.c",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAFkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2025-12-27T17:33:56.449Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-27T17:33:56.449Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "main.c",
               "DocumentMoniker": "C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\main.c",
               "RelativeDocumentMoniker": "main.c",
               "ToolTip": "C:\\Users\\wikto\\Desktop\\projekt_SO_git\\kaiten-zushi\\main.c",
               "RelativeToolTip": "main.c",
-              "ViewState": "AgIAAGwAAAAAAAAAAADwv3gAAAAoAAAAAAAAAA==",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAcwJEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
               "WhenOpened": "2025-12-27T17:33:36.616Z",
               "EditorCaption": ""
@@ -124,8 +123,7 @@
               "RelativeToolTip": "common.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAADwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-12-27T17:26:24.026Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-27T17:26:24.026Z"
             }
           ]
         }

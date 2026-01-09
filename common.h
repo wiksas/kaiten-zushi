@@ -48,6 +48,7 @@ typedef struct {
     int stats_produced[6];
     int stats_sold[6];
     int stats_special_revenue;
+    int stats_tips;
 } SharedData;
 
 typedef struct {

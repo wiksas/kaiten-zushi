@@ -41,7 +41,6 @@ int main() {
                 else if (order.price == 50) sd->stats_produced[4]++;
                 else if (order.price == 60) sd->stats_produced[5]++;
 
-
                 printf("\033[1;35m[Kucharz] !!! Wydano SPECJALNE (%d zl) dla grupy %ld !!!\033[0m\n",
                     order.price, order.mtype);
             }

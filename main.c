@@ -2,6 +2,8 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <sched.h>
 
 int shmid, semid, msgid;
 SharedData* sdata = NULL;
@@ -9,35 +11,15 @@ pid_t kucharz_pid, obsluga_pid, kierownik_pid;
 
 volatile sig_atomic_t stop_request = 0;
 
-
-void safe_usleep(long usec) {
-    struct timespec req, rem;
-    req.tv_sec = usec / 1000000;
-    req.tv_nsec = (usec % 1000000) * 1000;
-
-    while (nanosleep(&req, &rem) == -1) {
-        if (errno == EINTR) {
-            req = rem;
-        }
-        else {
-            break;
-        }
-    }
-}
-
 void handle_timeout(int sig) {
-    printf("\n\033[1;31m[Main] ALARM! Czas bezpieczenstwa minal. Zarzadzam ewakuacje.\033[0m\n");
-    if (sdata != NULL && sdata != (void*)-1) {
-        sdata->emergency_exit = true;
-    }
+    printf("\n\033[1;31m[Main] ALARM! Czas bezpieczenstwa minal.\033[0m\n");
+    if (sdata != NULL && sdata != (void*)-1) sdata->emergency_exit = true;
     stop_request = 1;
 }
 
 void handle_sigint(int sig) {
-    printf("\n\033[1;33m[Main] Otrzymano SIGINT (Ctrl+C). Koncze wpuszczanie i czekam na raport.\033[0m\n");
-    if (sdata != NULL && sdata != (void*)-1) {
-        sdata->emergency_exit = true;
-    }
+    printf("\n\033[1;33m[Main] SIGINT. Koncze wpuszczanie.\033[0m\n");
+    if (sdata != NULL && sdata != (void*)-1) sdata->emergency_exit = true;
     stop_request = 1;
 }
 
@@ -47,7 +29,7 @@ void cleanup_system() {
     if (obsluga_pid > 0) kill(obsluga_pid, SIGTERM);
     if (kierownik_pid > 0) kill(kierownik_pid, SIGTERM);
 
-    usleep(100000);
+    sched_yield();
 
     if (sdata != NULL && sdata != (void*)-1) shmdt(sdata);
     shmctl(shmid, IPC_RMID, NULL);
@@ -62,20 +44,28 @@ int main() {
     signal(SIGALRM, handle_timeout);
     alarm(300);
 
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_NOCLDWAIT;
+    sigaction(SIGCHLD, &sa, NULL);
+
     shmid = shmget(SHM_KEY, sizeof(SharedData), IPC_CREAT | 0600);
     if (shmid == -1) { perror("shmget"); return 1; }
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
+    // Inicjalizacja zmiennych
     sdata->start_time = 600;
     sdata->end_time = 660;
     sdata->current_time = sdata->start_time;
     sdata->open = true;
     sdata->emergency_exit = false;
     sdata->is_closed_for_new = false;
-    sdata->kitchen_delay_us = 800000;
+    sdata->kitchen_delay_us = 0;
 
     for (int i = 0; i < 6; i++) { sdata->stats_produced[i] = 0; if (i < 3) sdata->stats_sold[i] = 0; }
     sdata->stats_special_revenue = 0;
+    sdata->stats_tips = 0;
 
     for (int i = 0; i < P; i++) {
         sdata->belt[i].is_empty = true;
@@ -98,61 +88,58 @@ int main() {
 
     msgid = msgget(MSG_KEY, IPC_CREAT | 0600);
 
-    if ((kucharz_pid = fork()) == 0) { execl("./kucharz", "kucharz", NULL); exit(0); }
-    if ((obsluga_pid = fork()) == 0) { execl("./obsluga", "obsluga", NULL); exit(0); }
-    if ((kierownik_pid = fork()) == 0) { execl("./kierownik", "kierownik", NULL); exit(0); }
+    if ((kucharz_pid = fork()) == 0) { execl("./kucharz", "kucharz", NULL); exit(1); }
+    if ((obsluga_pid = fork()) == 0) { execl("./obsluga", "obsluga", NULL); exit(1); }
+    if ((kierownik_pid = fork()) == 0) { execl("./kierownik", "kierownik", NULL); exit(1); }
 
     int client_count = 0;
-    printf("[Main] RESTAURACJA OTWARTA. Czas symulacji: %d - %d\n", sdata->start_time, sdata->end_time);
-
+    printf("[Main] RESTAURACJA OTWARTA (Tryb Turbo).\n");
 
     while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
 
-        safe_usleep(1000000);
+        usleep(1000000); 
+        sched_yield(); 
+
+        // sdata->current_time++;
+
+        // if (sdata->current_time % 1 == 0) 
+        //     printf("[Zegar] %02d:%02d\n", sdata->current_time/60, sdata->current_time%60);
 
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit || stop_request) break;
 
-        if ((rand() % 100) < 40) {
+
+        // Losowanie klienta (np. 30% szans co minutę)
+        if ((rand() % 100) < 30) {
             pid_t pid = fork();
             if (pid == 0) {
                 char s[3], v[2];
                 int g_size = (rand() % 4) + 1;
                 int is_vip = (rand() % 100 < 10);
-
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
-
-                if (is_vip) printf("\n\033[1;31m[System] >>> NOWY VIP (%d os.) wchodzi o %d\033[0m\n", g_size, sdata->current_time);
-                else printf("[System] Nowa grupa (%d os.) wchodzi o %d\n", g_size, sdata->current_time);
-
                 execl("./klient", "klient", s, v, NULL);
-                exit(0);
+                exit(1);
             }
             if (pid > 0) client_count++;
         }
     }
 
     sdata->is_closed_for_new = true;
-    printf("\n\033[1;33m[Main] ZAMYKAMY WEJSCIE (Godzina %d). Obsluzono klientow: %d. Czekamy az zjedza...\033[0m\n", sdata->current_time, client_count);
+    printf("\n\033[1;33m[Main] ZAMYKAMY WEJSCIE. Czekam na opróżnienie lokalu...\033[0m\n");
 
-    int finished_clients = 0;
-    while (finished_clients < client_count) {
-        int status;
-        pid_t p = wait(&status);
-        if (p == -1) {
-            if (errno == ECHILD) break;
-            if (errno == EINTR) continue;
-            break;
-        }
-        if (p == kucharz_pid || p == obsluga_pid || p == kierownik_pid) {
-            printf("[Main] Uwaga: Pracownik (PID %d) zakonczyl prace przedwczesnie.\n", p);
-        }
-        else {
-            finished_clients++;
-        }
+    while (1) {
+        int total_occupancy = 0;
+        struct sembuf sb_lock = {0, -1, 0}; semop(semid, &sb_lock, 1);
+        for(int i=0; i<P; i++) total_occupancy += sdata->current_occupancy[i];
+        struct sembuf sb_unlock = {0, 1, 0}; semop(semid, &sb_unlock, 1);
+
+        if (total_occupancy == 0) break;
+        sched_yield();
     }
 
+
     sdata->open = false;
+    sleep(1);
     printf("\n\033[1;32m=======================================\n");
     printf("         RAPORT KONCOWY DNIA           \n");
     printf("=======================================\033[0m\n");

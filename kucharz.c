@@ -1,10 +1,21 @@
 #include "common.h"
+#include <sched.h>
 
 void handle_speed_signals(int sig) {
     int shmid = shmget(SHM_KEY, sizeof(SharedData), 0600);
+    if (shmid == -1) return; 
+
     SharedData* sd = shmat(shmid, NULL, 0);
-    if (sig == SIGUSR1) { sd->kitchen_delay_us /= 2; printf("\033[1;33m[Kucharz] Przyspieszam!\033[0m\n"); }
-    else if (sig == SIGUSR2) { sd->kitchen_delay_us *= 2; printf("\033[1;33m[Kucharz] Zwalniam...\033[0m\n"); }
+    if (sd == (void*)-1) return;
+
+    if (sig == SIGUSR1) { 
+        sd->kitchen_delay_us /= 2; 
+        printf("\033[1;33m[Kucharz] Przyspieszam! (Delay: %d)\033[0m\n", sd->kitchen_delay_us); 
+    }
+    else if (sig == SIGUSR2) { 
+        sd->kitchen_delay_us *= 2; 
+        printf("\033[1;33m[Kucharz] Zwalniam... (Delay: %d)\033[0m\n", sd->kitchen_delay_us); 
+    }
     shmdt(sd);
 }
 
@@ -27,9 +38,11 @@ int main() {
 
         if (msgrcv(msgid, &order, sizeof(int), 0, IPC_NOWAIT) != -1) has_special = true;
 
-        usleep(sd->kitchen_delay_us);
+        if (sd->kitchen_delay_us > 0) usleep(sd->kitchen_delay_us);
+        
+        sched_yield();
 
-        sem_op(semid, 5, -1);
+        sem_op(semid, 0, -1); 
 
         if (sd->belt[0].is_empty) {
             if (has_special) {
@@ -55,9 +68,12 @@ int main() {
                 printf("\033[1;36m[Kucharz] Wydano standard (%d zl)\033[0m\n", ceny[r]);
             }
         }
-        else if (has_special) msgsnd(msgid, &order, sizeof(int), 0);
+        else if (has_special) {
+            msgsnd(msgid, &order, sizeof(int), 0);
+        }
+        sem_op(semid, 0, 1);
 
-        sem_op(semid, 5, 1);
+        sched_yield();
     }
     shmdt(sd);
     return 0;

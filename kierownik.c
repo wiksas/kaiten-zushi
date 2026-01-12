@@ -1,4 +1,5 @@
 #include "common.h"
+#include <sched.h>
 
 SharedData* sdata = NULL;
 
@@ -37,19 +38,20 @@ int main() {
 
     printf("[Kierownik] Zarzadca uruchomiony. PID: %d. Jestem Glownym Zegarem.\n", getpid());
 
-
-
     printf("[Kierownik] Restauracja otwarta o godzinie %02d:%02d\n",
         sdata->start_time / 60, sdata->start_time % 60);
 
-
     while (sdata->open && !sdata->emergency_exit) {
 
-        sleep(1);
+        usleep(1000000); 
+        sched_yield();
+
         sdata->current_time += 1;
 
-        printf("[ZEGAR] Godzina: %02d:%02d\n",
-            sdata->current_time / 60, sdata->current_time % 60);
+        if (sdata->current_time % 1 == 0) {
+            printf("[ZEGAR] Godzina: %02d:%02d\n",
+                sdata->current_time / 60, sdata->current_time % 60);
+        }
 
         if (sdata->current_time >= sdata->end_time && !sdata->is_closed_for_new) {
             sdata->is_closed_for_new = true;

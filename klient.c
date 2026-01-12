@@ -23,12 +23,9 @@ typedef struct { int id; int age; } PersonInfo;
 
 
 void nano_ping() {
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 1; 
+    struct timespec ts = {0, 1}; 
     nanosleep(&ts, NULL);
 }
-
 
 void print_bill() {
     static int already_printed = 0;

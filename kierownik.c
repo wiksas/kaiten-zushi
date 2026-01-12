@@ -1,5 +1,6 @@
 #include "common.h"
-#include <sched.h>
+#include <sched.h> 
+#include <unistd.h>
 
 SharedData* sdata = NULL;
 
@@ -43,19 +44,24 @@ int main() {
 
     while (sdata->open && !sdata->emergency_exit) {
 
-        usleep(1000000); 
-        sched_yield();
 
-        sdata->current_time += 1;
+        usleep(100000); 
+        
+        if (sdata->current_time < sdata->end_time) {
+            
+            sdata->current_time += 1;
 
-        if (sdata->current_time % 1 == 0) {
-            printf("[ZEGAR] Godzina: %02d:%02d\n",
-                sdata->current_time / 60, sdata->current_time % 60);
+
+            if (sdata->current_time % 1 == 0) {
+                printf("[ZEGAR] Godzina: %02d:%02d\n",
+                    sdata->current_time / 60, sdata->current_time % 60);
+            }
         }
+
 
         if (sdata->current_time >= sdata->end_time && !sdata->is_closed_for_new) {
             sdata->is_closed_for_new = true;
-            printf("\n\033[1;33m[Kierownik] Godzina %02d:%02d. ZAMYKAMY BILETOMAT (Brak nowych wstepow).\033[0m\n",
+            printf("\n\033[1;33m[Kierownik] Godzina %02d:%02d. KONIEC CZASU. ZAMYKAMY BILETOMAT.\033[0m\n",
                 sdata->end_time / 60, sdata->end_time % 60);
         }
     }

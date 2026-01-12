@@ -1,5 +1,10 @@
 #include "common.h"
-#include <sched.h> 
+#include <time.h> 
+
+void nano_ping() {
+    struct timespec ts = {0, 1}; 
+    nanosleep(&ts, NULL);
+}
 
 int main() {
     int shmid = shmget(SHM_KEY, sizeof(SharedData), 0600);
@@ -8,24 +13,30 @@ int main() {
 
     int semid = semget(SEM_KEY, 7, 0600);
 
-    printf("[Obsluga] Silnik tasmy uruchomiony (PID: %d).\n", getpid());
+    printf("[Obsluga] Silnik tasmy.\n");
 
     while (sdata->open && !sdata->emergency_exit) {
         
-        usleep(1000000); 
-        sched_yield();
+
+        usleep(200000); 
+        // nano_ping();
 
         sem_op(semid, 0, -1);
+
+
+        Plate last_item = sdata->belt[P - 1];
+
 
         for (int i = P - 1; i > 0; i--) {
             sdata->belt[i] = sdata->belt[i - 1];
         }
 
-        sdata->belt[0].is_empty = true;
-        sdata->belt[0].target_table_pid = -1;
-        sdata->belt[0].price = 0;
+
+        sdata->belt[0] = last_item;
 
         sem_op(semid, 0, 1);
+        
+        nano_ping();
     }
 
     shmdt(sdata);

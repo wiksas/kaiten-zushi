@@ -3,7 +3,12 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <signal.h>
-#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
+#include <sys/msg.h>
 
 int shmid, semid, msgid;
 SharedData* sdata = NULL;
@@ -28,8 +33,6 @@ void cleanup_system() {
     if (kucharz_pid > 0) kill(kucharz_pid, SIGTERM);
     if (obsluga_pid > 0) kill(obsluga_pid, SIGTERM);
     if (kierownik_pid > 0) kill(kierownik_pid, SIGTERM);
-
-    sched_yield();
 
     if (sdata != NULL && sdata != (void*)-1) shmdt(sdata);
     shmctl(shmid, IPC_RMID, NULL);
@@ -97,24 +100,16 @@ int main() {
 
     while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
 
-        usleep(1000000); 
-        sched_yield(); 
-
-        // sdata->current_time++;
-
-        // if (sdata->current_time % 1 == 0) 
-        //     printf("[Zegar] %02d:%02d\n", sdata->current_time/60, sdata->current_time%60);
-
+        usleep(100000); 
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit || stop_request) break;
 
-
-        // Losowanie klienta (np. 30% szans co minutę)
+        // Losowanie klienta
         if ((rand() % 100) < 30) {
             pid_t pid = fork();
             if (pid == 0) {
                 char s[3], v[2];
                 int g_size = (rand() % 4) + 1;
-                int is_vip = (rand() % 100 < 10);
+                int is_vip = (rand() % 100 < 50);
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
                 execl("./klient", "klient", s, v, NULL);
@@ -129,19 +124,21 @@ int main() {
 
     while (1) {
         int total_occupancy = 0;
+        
         struct sembuf sb_lock = {0, -1, 0}; semop(semid, &sb_lock, 1);
         for(int i=0; i<P; i++) total_occupancy += sdata->current_occupancy[i];
         struct sembuf sb_unlock = {0, 1, 0}; semop(semid, &sb_unlock, 1);
 
         if (total_occupancy == 0) break;
-        sched_yield();
-    }
 
+
+        sleep(1); 
+    }
 
     sdata->open = false;
     sleep(1);
     printf("\n\033[1;32m=======================================\n");
-    printf("         RAPORT KONCOWY DNIA           \n");
+    printf("        RAPORT KONCOWY DNIA          \n");
     printf("=======================================\033[0m\n");
 
     printf("[Kucharz] STATYSTYKA PRODUKCJI:\n");
@@ -162,7 +159,7 @@ int main() {
 
     printf(" - Sprzedaz Dan Podstawowych: %d zl\n", przychod_std);
     printf(" - Sprzedaz Dan Specjalnych : %d zl\n", sdata->stats_special_revenue);
-    printf(" - Napiwki (VIP)    : %d zl\n", sdata->stats_tips);
+    printf(" - Napiwki (VIP)     : %d zl\n", sdata->stats_tips);
 
     int utarg_total = przychod_std + sdata->stats_special_revenue + sdata->stats_tips;
     printf(" CALKOWITY PRZYCHOD: %d zl\n", utarg_total);

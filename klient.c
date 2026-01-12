@@ -1,7 +1,7 @@
 #include "common.h"
 #include <pthread.h>
 #include <signal.h>
-#include <sched.h>
+#include <time.h>
 
 int table_idx = -1;
 int group_size;
@@ -20,6 +20,15 @@ SharedData* sdata = NULL;
 int eaten_types[6] = { 0, 0, 0, 0, 0, 0 };
 
 typedef struct { int id; int age; } PersonInfo;
+
+
+void nano_ping() {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = 1; 
+    nanosleep(&ts, NULL);
+}
+
 
 void print_bill() {
     static int already_printed = 0;
@@ -53,7 +62,6 @@ void print_bill() {
     fflush(stdout);
 }
 
-
 void cleanup_handler(int sig) {
     print_bill();
 
@@ -62,6 +70,7 @@ void cleanup_handler(int sig) {
         sdata->current_occupancy[table_idx] -= group_size;
         if (sdata->current_occupancy[table_idx] < 0) sdata->current_occupancy[table_idx] = 0;
         
+        // Napiwek przy wyjściu
         int napiwek = (is_vip_global) ? (total_paid * 20) / 100 : 0;
         if (napiwek > 0) sdata->stats_tips += napiwek;
         
@@ -76,7 +85,9 @@ void* person(void* arg) {
     PersonInfo* info = (PersonInfo*)arg;
     int eating_time = sitting_at_bar ? 200000 : 500000;
     
+
     usleep(rand() % 500000);
+    nano_ping();
 
     int chance = is_vip_global ? 80 : 20;
 
@@ -96,7 +107,9 @@ void* person(void* arg) {
 
     while (!sdata->emergency_exit && (eaten_total < target_to_eat || pending_special_orders > 0)) {
         
+
         usleep(100000 + (rand() % 300000));
+        nano_ping();
 
         sem_op(semid, 0, -1);
 
@@ -114,6 +127,7 @@ void* person(void* arg) {
                 if (is_vip_global) color = "\033[1;31m";
                 else if (sitting_at_bar) color = "\033[1;36m";
                 else color = (p >= 40 ? "\033[1;35m" : "\033[1;34m");
+
 
                 printf("%s[%s %d-%d (%d lat)] [%s] Zjada: %s (%d zl)\033[0m\n",
                     color, (is_vip_global ? "VIP" : "Klient"), getpid(), info->id, info->age, miejsce, typ_dania, p);
@@ -140,7 +154,9 @@ void* person(void* arg) {
         }
         sem_op(semid, 0, 1);
         
-        sched_yield();
+        nano_ping();
+
+
         usleep(eating_time);
     }
     return NULL;
@@ -160,30 +176,33 @@ int main(int argc, char** argv) {
     if (is_vip_global) target_to_eat += 2;
 
     PersonInfo info[group_size];
+    
 
-    // --- LOGIKA WIEKU (OPIEKA NAD DZIEĆMI) ---
     for (int i = 0; i < group_size; i++) { 
         info[i].id = i + 1; 
         info[i].age = (rand() % 60) + 1; 
     }
-    while (true) {
-        int children = 0, adults = 0;
-        for (int i = 0; i < group_size; i++) {
-            if (info[i].age < 10) children++;
-            else if (info[i].age >= 18) adults++;
-        }
-        int needed = (children + 2) / 3; 
-        if (children == 0) needed = 0;
 
-        if (adults >= needed) break;
-        else {
-            for (int i = 0; i < group_size; i++) {
-                if (info[i].age < 18) {
-                    info[i].age = 18 + (rand() % 30);
-                    break; 
-                }
-            }
-        }
+ 
+    printf("[System] Grupa %d os. Wiek: ", group_size);
+    int children = 0, adults = 0;
+    for(int i=0; i<group_size; i++) {
+        printf("%d ", info[i].age);
+        if (info[i].age < 10) children++;
+        else if (info[i].age >= 18) adults++;
+    }
+    printf("\n");
+
+    int needed = (children + 2) / 3; 
+    if (children == 0) needed = 0;
+
+    if (adults < needed) {
+        printf("\033[1;31m[System] ODMOWA WSTĘPU! Za mało opiekunów.\033[0m\n");
+        printf("\033[1;31m[System] Dzieci: %d, Dorosłych: %d. Wymaganych dorosłych: %d.\033[0m\n", 
+            children, adults, needed);
+        
+
+        exit(0);
     }
 
     int shmid = shmget(SHM_KEY, sizeof(SharedData), 0600);
@@ -191,6 +210,7 @@ int main(int argc, char** argv) {
     sdata = shmat(shmid, NULL, 0);
     semid = semget(SEM_KEY, 7, 0600);
     msgid = msgget(MSG_KEY, 0600);
+
 
     if (group_size == 1 && (rand() % 100 < 50) && !is_vip_global) sitting_at_bar = true;
     else sitting_at_bar = false;
@@ -202,7 +222,11 @@ int main(int argc, char** argv) {
         if (sdata->is_closed_for_new) { shmdt(sdata); exit(0); }
         
         sem_op(semid, 0, -1);
+        
+
         usleep(sitting_at_bar ? 50000 : 800000);
+        nano_ping();
+        
         sem_op(semid, 0, 1);
     }
 
@@ -231,6 +255,7 @@ int main(int argc, char** argv) {
             sem_to_take = 4; start_search = 16; end_search = 20; 
         }
     }
+
 
     sem_op(semid, sem_to_take, -group_size);
 

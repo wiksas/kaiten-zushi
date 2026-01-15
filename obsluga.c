@@ -1,10 +1,10 @@
 #include "common.h"
 #include <time.h> 
 
-void nano_ping() {
-    struct timespec ts = {0, 1}; 
-    nanosleep(&ts, NULL);
-}
+// void nano_ping() {
+//     struct timespec ts = {0, 1}; 
+//     nanosleep(&ts, NULL);
+// }
 
 int main() {
     int shmid = shmget(SHM_KEY, sizeof(SharedData), 0600);
@@ -18,7 +18,7 @@ int main() {
     while (sdata->open && !sdata->emergency_exit) {
         
 
-        usleep(200000); 
+        usleep(2000000); 
         // nano_ping();
 
         sem_op(semid, 0, -1);
@@ -36,7 +36,7 @@ int main() {
 
         sem_op(semid, 0, 1);
         
-        nano_ping();
+        // nano_ping();
     }
 
     shmdt(sdata);

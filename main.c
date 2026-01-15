@@ -35,18 +35,21 @@ void cleanup_system() {
     if (kierownik_pid > 0) kill(kierownik_pid, SIGTERM);
 
     if (sdata != NULL && sdata != (void*)-1) shmdt(sdata);
+    
     shmctl(shmid, IPC_RMID, NULL);
     semctl(semid, 0, IPC_RMID);
     msgctl(msgid, IPC_RMID, NULL);
+    
     printf("[Main] Zasoby IPC usuniete.\n");
 }
 
 int main() {
     srand(time(NULL));
+    
     signal(SIGINT, handle_sigint);
     signal(SIGALRM, handle_timeout);
-    alarm(300);
 
+    //zombie
     struct sigaction sa;
     sa.sa_handler = SIG_IGN;
     sigemptyset(&sa.sa_mask);
@@ -57,7 +60,6 @@ int main() {
     if (shmid == -1) { perror("shmget"); return 1; }
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
-    // Inicjalizacja zmiennych
     sdata->start_time = 600;
     sdata->end_time = 660;
     sdata->current_time = sdata->start_time;
@@ -70,24 +72,40 @@ int main() {
     sdata->stats_special_revenue = 0;
     sdata->stats_tips = 0;
 
+
+    int th_lada = NUM_LADA;
+    int th_1os  = th_lada + NUM_1OS;
+    int th_2os  = th_1os  + NUM_2OS;
+    int th_3os  = th_2os  + NUM_3OS;
+
+
     for (int i = 0; i < P; i++) {
         sdata->belt[i].is_empty = true;
         sdata->belt[i].target_table_pid = -1;
         sdata->current_occupancy[i] = 0;
-        if (i < LADA_LIMIT) sdata->table_capacity[i] = 1;
-        else if (i >= 6 && i <= 10) sdata->table_capacity[i] = 2;
-        else if (i >= 11 && i <= 15) sdata->table_capacity[i] = 3;
-        else if (i >= 16 && i <= 19) sdata->table_capacity[i] = 4;
+        
+        if (i < th_lada)      sdata->table_capacity[i] = 1; // Lada
+        else if (i < th_1os)  sdata->table_capacity[i] = 1; // 1-os
+        else if (i < th_2os)  sdata->table_capacity[i] = 2; // 2-os
+        else if (i < th_3os)  sdata->table_capacity[i] = 3; // 3-os
+        else                  sdata->table_capacity[i] = 4; // 4-os
     }
 
-    semid = semget(SEM_KEY, 7, IPC_CREAT | 0600);
-    semctl(semid, 0, SETVAL, 1);
-    semctl(semid, 1, SETVAL, 0);
-    semctl(semid, 2, SETVAL, 5 * 2);
-    semctl(semid, 3, SETVAL, 5 * 3);
-    semctl(semid, 4, SETVAL, 4 * 4);
-    semctl(semid, 5, SETVAL, 1);
-    semctl(semid, 6, SETVAL, LADA_LIMIT);
+    printf("[Main] Konfiguracja Lokalu (Total: %d):\n", P);
+    printf(" - Lada: %d\n - 1-os: %d\n - 2-os: %d\n - 3-os: %d\n - 4-os: %d\n",
+           NUM_LADA, NUM_1OS, NUM_2OS, NUM_3OS, NUM_4OS);
+
+
+    semid = semget(SEM_KEY, 8, IPC_CREAT | 0600);
+    
+    semctl(semid, 0, SETVAL, 1);       // Mutex taśmy
+    semctl(semid, 1, SETVAL, 0);       // Kucharz
+    semctl(semid, 2, SETVAL, NUM_2OS * 2);   
+    semctl(semid, 3, SETVAL, NUM_3OS * 3);
+    semctl(semid, 4, SETVAL, NUM_4OS * 4);
+    semctl(semid, 5, SETVAL, 1);       // Kasjer
+    semctl(semid, 6, SETVAL, NUM_LADA);
+    semctl(semid, 7, SETVAL, NUM_1OS); 
 
     msgid = msgget(MSG_KEY, IPC_CREAT | 0600);
 
@@ -96,14 +114,14 @@ int main() {
     if ((kierownik_pid = fork()) == 0) { execl("./kierownik", "kierownik", NULL); exit(1); }
 
     int client_count = 0;
-    printf("[Main] RESTAURACJA OTWARTA (Tryb Turbo).\n");
+    printf("[Main] RESTAURACJA OTWARTA.\n");
 
     while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
 
-        usleep(100000); 
+        usleep(1000000); 
+        
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit || stop_request) break;
 
-        // Losowanie klienta
         if ((rand() % 100) < 30) {
             pid_t pid = fork();
             if (pid == 0) {
@@ -112,7 +130,9 @@ int main() {
                 int is_vip = (rand() % 100 < 50);
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
+                
                 execl("./klient", "klient", s, v, NULL);
+                perror("[Main] Blad execl");
                 exit(1);
             }
             if (pid > 0) client_count++;
@@ -124,19 +144,17 @@ int main() {
 
     while (1) {
         int total_occupancy = 0;
-        
         struct sembuf sb_lock = {0, -1, 0}; semop(semid, &sb_lock, 1);
         for(int i=0; i<P; i++) total_occupancy += sdata->current_occupancy[i];
         struct sembuf sb_unlock = {0, 1, 0}; semop(semid, &sb_unlock, 1);
 
         if (total_occupancy == 0) break;
-
-
         sleep(1); 
     }
 
     sdata->open = false;
     sleep(1);
+
     printf("\n\033[1;32m=======================================\n");
     printf("        RAPORT KONCOWY DNIA          \n");
     printf("=======================================\033[0m\n");
@@ -156,17 +174,14 @@ int main() {
     printf("[Kasjer] STATYSTYKA SPRZEDAZY:\n");
     int przychod_std = 0;
     for (int i = 0; i < 3; i++) przychod_std += sdata->stats_sold[i] * ceny[i];
-
     printf(" - Sprzedaz Dan Podstawowych: %d zl\n", przychod_std);
     printf(" - Sprzedaz Dan Specjalnych : %d zl\n", sdata->stats_special_revenue);
     printf(" - Napiwki (VIP)     : %d zl\n", sdata->stats_tips);
-
     int utarg_total = przychod_std + sdata->stats_special_revenue + sdata->stats_tips;
     printf(" CALKOWITY PRZYCHOD: %d zl\n", utarg_total);
 
     printf("---------------------------------------\n");
     printf("[Sprzatacz] STRATY (Jedzenie na tasmie):\n");
-
     int straty = 0;
     for (int i = 0; i < P; i++) {
         if (!sdata->belt[i].is_empty) {

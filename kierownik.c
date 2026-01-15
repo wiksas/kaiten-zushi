@@ -45,7 +45,7 @@ int main() {
     while (sdata->open && !sdata->emergency_exit) {
 
 
-        usleep(100000); 
+        usleep(1000000); 
         
         if (sdata->current_time < sdata->end_time) {
             

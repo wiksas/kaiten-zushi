@@ -2,6 +2,12 @@
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
 
 int table_idx = -1;
 int group_size;
@@ -16,16 +22,10 @@ int msgid;
 int pending_special_orders = 0;
 int semid;
 SharedData* sdata = NULL;
-
 int eaten_types[6] = { 0, 0, 0, 0, 0, 0 };
 
 typedef struct { int id; int age; } PersonInfo;
 
-
-void nano_ping() {
-    struct timespec ts = {0, 1}; 
-    nanosleep(&ts, NULL);
-}
 
 void print_bill() {
     static int already_printed = 0;
@@ -67,25 +67,17 @@ void cleanup_handler(int sig) {
         sdata->current_occupancy[table_idx] -= group_size;
         if (sdata->current_occupancy[table_idx] < 0) sdata->current_occupancy[table_idx] = 0;
         
-        // Napiwek przy wyjściu
         int napiwek = (is_vip_global) ? (total_paid * 20) / 100 : 0;
         if (napiwek > 0) sdata->stats_tips += napiwek;
         
         sem_op(semid, 0, 1);
     }
-
     if (sdata != NULL) shmdt(sdata);
     exit(0);
 }
 
 void* person(void* arg) {
     PersonInfo* info = (PersonInfo*)arg;
-    int eating_time = sitting_at_bar ? 200000 : 500000;
-    
-
-    usleep(rand() % 500000);
-    nano_ping();
-
     int chance = is_vip_global ? 80 : 20;
 
     if (!sitting_at_bar && (rand() % 100 < chance)) {
@@ -96,6 +88,9 @@ void* person(void* arg) {
         order.price = prices[base_price_idx];
 
         if (msgsnd(msgid, &order, sizeof(int), IPC_NOWAIT) == 0) {
+            printf("\033[1;35m[Klient %d-%d] >> ZAMAWIA DANIE SPECJALNE (Koszt: %d zl)\033[0m\n", 
+                   getpid(), info->id, order.price);
+
             pthread_mutex_lock(&group_lock);
             pending_special_orders++;
             pthread_mutex_unlock(&group_lock);
@@ -103,12 +98,9 @@ void* person(void* arg) {
     }
 
     while (!sdata->emergency_exit && (eaten_total < target_to_eat || pending_special_orders > 0)) {
-        
+        usleep(100000 + (rand() % 200000));
 
-        usleep(100000 + (rand() % 300000));
-        nano_ping();
-
-        sem_op(semid, 0, -1);
+        sem_op(semid, 0, -1); 
 
         if (!sdata->belt[table_idx].is_empty) {
             int p = sdata->belt[table_idx].price;
@@ -117,14 +109,12 @@ void* person(void* arg) {
             bool is_basic_food = (p <= 20);
 
             if (is_my_special || (is_generic && eaten_total < target_to_eat && is_basic_food)) {
-
                 char* typ_dania = (p >= 40) ? "SPECJALNE" : "Standard";
                 char* miejsce = sitting_at_bar ? "LADA" : "STOLIK";
                 char* color;
                 if (is_vip_global) color = "\033[1;31m";
                 else if (sitting_at_bar) color = "\033[1;36m";
                 else color = (p >= 40 ? "\033[1;35m" : "\033[1;34m");
-
 
                 printf("%s[%s %d-%d (%d lat)] [%s] Zjada: %s (%d zl)\033[0m\n",
                     color, (is_vip_global ? "VIP" : "Klient"), getpid(), info->id, info->age, miejsce, typ_dania, p);
@@ -134,7 +124,6 @@ void* person(void* arg) {
                 pthread_mutex_lock(&group_lock);
                 eaten_total++;
                 total_paid += p;
-
                 if (is_my_special) pending_special_orders--;
 
                 int type_idx = -1;
@@ -150,17 +139,15 @@ void* person(void* arg) {
             }
         }
         sem_op(semid, 0, 1);
-        
-        nano_ping();
-
-
-        usleep(eating_time);
     }
     return NULL;
 }
 
 int main(int argc, char** argv) {
-    if (argc < 3) exit(1);
+    if (argc < 3) {
+        printf("[Klient] Blad: Oczekiwalem 2 argumentow (size, vip)\n");
+        exit(1);
+    }
     srand(time(NULL) ^ getpid());
 
     signal(SIGINT, cleanup_handler);
@@ -173,14 +160,8 @@ int main(int argc, char** argv) {
     if (is_vip_global) target_to_eat += 2;
 
     PersonInfo info[group_size];
-    
+    for (int i = 0; i < group_size; i++) { info[i].id = i + 1; info[i].age = (rand() % 60) + 1; }
 
-    for (int i = 0; i < group_size; i++) { 
-        info[i].id = i + 1; 
-        info[i].age = (rand() % 60) + 1; 
-    }
-
- 
     printf("[System] Grupa %d os. Wiek: ", group_size);
     int children = 0, adults = 0;
     for(int i=0; i<group_size; i++) {
@@ -190,75 +171,68 @@ int main(int argc, char** argv) {
     }
     printf("\n");
 
-    int needed = (children + 2) / 3; 
-    if (children == 0) needed = 0;
-
+    int needed = (children == 0) ? 0 : (children + 2) / 3;
     if (adults < needed) {
         printf("\033[1;31m[System] ODMOWA WSTĘPU! Za mało opiekunów.\033[0m\n");
-        printf("\033[1;31m[System] Dzieci: %d, Dorosłych: %d. Wymaganych dorosłych: %d.\033[0m\n", 
-            children, adults, needed);
-        
-
         exit(0);
     }
 
     int shmid = shmget(SHM_KEY, sizeof(SharedData), 0600);
     if (shmid == -1) { perror("shmget"); exit(1); }
     sdata = shmat(shmid, NULL, 0);
-    semid = semget(SEM_KEY, 7, 0600);
+    
+    semid = semget(SEM_KEY, 8, 0600);
     msgid = msgget(MSG_KEY, 0600);
 
-
-    if (group_size == 1 && (rand() % 100 < 50) && !is_vip_global) sitting_at_bar = true;
+    if (group_size == 1 && !is_vip_global) {
+        if (rand() % 100 < 60) sitting_at_bar = true;
+        else sitting_at_bar = false;
+    }
     else sitting_at_bar = false;
 
-    if (is_vip_global) {
-        printf("\n\033[1;31m[VIP %d] WCHODZI DO RESTAURACJI BEZ KOLEJKI!\033[0m\n", getpid());
-    }
+    if (is_vip_global) printf("\n\033[1;31m[VIP %d] WCHODZI DO RESTAURACJI BEZ KOLEJKI!\033[0m\n", getpid());
     else {
         if (sdata->is_closed_for_new) { shmdt(sdata); exit(0); }
-        
         sem_op(semid, 0, -1);
-        
-
-        usleep(sitting_at_bar ? 50000 : 800000);
-        nano_ping();
-        
+        if (!sdata->open) { sem_op(semid, 0, 1); shmdt(sdata); exit(0); }
         sem_op(semid, 0, 1);
     }
+
+    int th_lada = NUM_LADA;
+    int th_1os  = th_lada + NUM_1OS;
+    int th_2os  = th_1os  + NUM_2OS;
+    int th_3os  = th_2os  + NUM_3OS;
 
     int start_search = 0, end_search = 0, sem_to_take = 0;
 
     if (sitting_at_bar) {
-        sem_to_take = 6; start_search = 0; end_search = 6;
+        sem_to_take = 6; 
+        start_search = 0; 
+        end_search = th_lada;
     }
     else {
         int r = rand() % 100;
+        
         if (group_size == 1) { 
-            // 40% na 2-os, 30% na 3-os, 30% na 4-os
-            if (r < 40) { sem_to_take = 2; start_search = 6; end_search = 11; }
-            else if (r < 70) { sem_to_take = 3; start_search = 11; end_search = 16; }
-            else { sem_to_take = 4; start_search = 16; end_search = 20; }
+            if (r < 80) { sem_to_take = 7; start_search = th_lada; end_search = th_1os; } 
+            else { sem_to_take = 2; start_search = th_1os; end_search = th_2os; } 
         }
         else if (group_size == 2) { 
-            // 50% na 2-os, 50% na 4-os
-            if (r < 50) { sem_to_take = 2; start_search = 6; end_search = 11; }
-            else { sem_to_take = 4; start_search = 16; end_search = 20; }
+            if (r < 50) { sem_to_take = 2; start_search = th_1os; end_search = th_2os; } 
+            else { sem_to_take = 4; start_search = th_3os; end_search = P; } 
         }
         else if (group_size == 3) { 
-            sem_to_take = 3; start_search = 11; end_search = 16; 
+            sem_to_take = 3; start_search = th_2os; end_search = th_3os; 
         }
         else { 
-            sem_to_take = 4; start_search = 16; end_search = 20; 
+            sem_to_take = 4; start_search = th_3os; end_search = P; 
         }
     }
-
 
     sem_op(semid, sem_to_take, -group_size);
 
     bool dosiedlismy_sie = false;
-    sem_op(semid, 0, -1);
-
+    sem_op(semid, 0, -1); 
 
     for (int i = start_search; i < end_search; i++) {
         int wolne = sdata->table_capacity[i] - sdata->current_occupancy[i];
@@ -273,32 +247,28 @@ int main(int argc, char** argv) {
 
     if (table_idx == -1) {
         sem_op(semid, sem_to_take, group_size);
+        printf("[Klient %d] Błąd: Zająłem semafor, ale nie znalazłem indeksu!\n", getpid());
         exit(1);
     }
 
     int capacity = sdata->table_capacity[table_idx];
-    char* name = is_vip_global ? "VIP" : "Grupa";
+    char* name_vip = is_vip_global ? "VIP" : "Grupa";
     char* color_header = is_vip_global ? "\033[1;31m" : "\033[1;32m";
-
 
     printf("\n%s========================================\n", color_header);
     if (sitting_at_bar) {
-        printf("[%s %d] ZAJMUJE MIEJSCE PRZY LADZIE (Nr %d)\n", name, getpid(), table_idx);
+        printf("[%s %d] ZAJMUJE MIEJSCE PRZY LADZIE (Nr %d)\n", name_vip, getpid(), table_idx);
     }
     else if (dosiedlismy_sie) {
-        printf("[%s %d] DOSIADA SIĘ do stolika nr %d (Pojemnosc: %d)\n", name, getpid(), table_idx, capacity);
+        printf("[%s %d] DOSIADA SIĘ do stolika nr %d (Pojemnosc: %d)\n", name_vip, getpid(), table_idx, capacity);
     }
     else {
         char* extra = "";
         if (capacity > group_size) extra = " (LUZNY STOLIK)";
-        printf("[%s %d] ZAJMUJE PUSTY STOLIK nr %d (Pojemnosc: %d)%s\n", name, getpid(), table_idx, capacity, extra);
+        printf("[%s %d] ZAJMUJE PUSTY STOLIK nr %d (Pojemnosc: %d)%s\n", name_vip, getpid(), table_idx, capacity, extra);
     }
     
     printf(">> Wielkosc: %d os. CEL DO ZJEDZENIA: %d DAN.\n", group_size, target_to_eat);
-    printf(">> Wiek: ");
-    for(int i=0; i<group_size; i++) printf("%d ", info[i].age);
-    printf("\n");
-    
     printf("========================================\033[0m\n");
     fflush(stdout);
 
@@ -308,14 +278,16 @@ int main(int argc, char** argv) {
 
     sem_op(semid, 0, -1);
     sdata->current_occupancy[table_idx] -= group_size;
-
     int napiwek = (is_vip_global) ? (total_paid * 20) / 100 : 0;
     if (napiwek > 0) sdata->stats_tips += napiwek;
-
     sem_op(semid, 0, 1);
-    sem_op(semid, sem_to_take, group_size);
 
     print_bill();
+
+    printf("[Klient %d] Zbieramy się do wyjścia... (2s)\n", getpid());
+    sleep(2);
+
+    sem_op(semid, sem_to_take, group_size);
 
     shmdt(sdata);
     return 0;

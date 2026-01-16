@@ -61,7 +61,7 @@ int main() {
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
     sdata->start_time = 600;
-    sdata->end_time = 660;
+    sdata->end_time = 1320;
     sdata->current_time = sdata->start_time;
     sdata->open = true;
     sdata->emergency_exit = false;
@@ -116,14 +116,28 @@ int main() {
     int client_count = 0;
     printf("[Main] RESTAURACJA OTWARTA.\n");
 
-    while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
+while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
 
         usleep(1000000); 
         
         if (sdata->current_time >= sdata->end_time || sdata->emergency_exit || stop_request) break;
 
+        if (client_count >= MAX_CLIENTS) {
+            printf("\033[1;31m[Main] WYJATEK: Osiagnieto limit %d procesow klientow! Zamykam wejscie.\033[0m\n", MAX_CLIENTS);
+            
+            sdata->is_closed_for_new = true; 
+            break; 
+        }
+
         if ((rand() % 100) < 30) {
             pid_t pid = fork();
+            
+            if (pid == -1) {
+                perror("[Main] Blad fork (brak zasobow)");
+                sdata->emergency_exit = true; 
+                break;
+            }
+            
             if (pid == 0) {
                 char s[3], v[2];
                 int g_size = (rand() % 4) + 1;
@@ -135,7 +149,11 @@ int main() {
                 perror("[Main] Blad execl");
                 exit(1);
             }
-            if (pid > 0) client_count++;
+            
+            if (pid > 0) {
+                client_count++;
+
+            }
         }
     }
 

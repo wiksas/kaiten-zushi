@@ -18,38 +18,60 @@ Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej
 
 ---
 
-## General info  
-- Aplikacja symuluje cykl życia restauracji: od otwarcia o godzinie Tp do zamknięcia o Tk.
-- System zarządza ruchem taśmy, produkcją dań przez kucharza oraz konsumpcją przez grupy klientów.
-- Zaimplementowano logikę biletomatu, obsługę klientów VIP oraz restrykcyjne zasady opieki nad dziećmi.
-- Po zakończeniu pracy generowany jest automatyczny raport finansowy uwzględniający sprzedaż i straty.
+## General info
+- **Symulacja Restauracji (C):** Aplikacja symuluje pełny cykl życia lokalu gastronomicznego w środowisku wieloprocesowym.
+- **Model Hybrydowy:** Główny proces (`main`) zarządza generowaniem klientów (procesy), wewnątrz których działają poszczególne osoby (wątki `pthread`).
+- **Logika Zajmowania Miejsc:** - Algorytm decyzyjny wybiera między **Ladą** (szybka konsumpcja, 1-os) a **Stolikami** (1, 2, 3 lub 4-osobowymi).
+    - Obsługa priorytetów dla **VIP** (brak kolejki, napiwki).
+    - Walidacja grup: wymagany 1 dorosły na każde rozpoczęte 3 dzieci.
+- **Bezpieczeństwo Systemu:** Wbudowany limit **10 000 procesów** (ochrona przed *fork bomb*) oraz procedura bezpiecznego zamykania (`SIGINT`) z oczekiwaniem na opróżnienie lokalu.
 
 ---
 
-## Technologies  
+## Technologies
 
 <p align="center">
-<img src="https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" alt="C++" />
-<img src="https://img.shields.io/badge/Multithreading-0078D4?style=for-the-badge&logo=googlecloud&logoColor=white" alt="Multithreading" />
-<img src="https://img.shields.io/badge/Processes-555555?style=for-the-badge&logo=linux&logoColor=white" alt="Processes" />
-<img src="https://img.shields.io/badge/IPC-FF4500?style=for-the-badge&logo=threadless&logoColor=white" alt="IPC" />
+<img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white" alt="C" />
+<img src="https://img.shields.io/badge/Pthreads-0078D4?style=for-the-badge&logo=gnu&logoColor=white" alt="Pthreads" />
+<img src="https://img.shields.io/badge/Processes-555555?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Processes" />
+<img src="https://img.shields.io/badge/SystemV_IPC-FF4500?style=for-the-badge&logo=linux&logoColor=white" alt="IPC" />
 </p>
 
 ---
 
 ## Architecture & IPC
-Symulacja wykorzystuje zdecentralizowany model procesów komunikujących się przez systemowe mechanizmy IPC:
 
-* **Pamięć Współdzielona (Shared Memory):** Służy do przechowywania tablicy talerzyków na taśmie (`Plate belt[P]`), aktualnego czasu symulacji oraz statystyk sprzedaży.
-* **Semafory (System V Semaphores):** * Zarządzanie biletomatem (Semafor 0).
-    * Kontrola dostępności stolików dla grup 1, 2, 3 i 4-osobowych (Semafory 1-4).
-    * Zapewnienie wyłącznego dostępu do taśmy (Mutex - Semafor 5).
-* **Kolejki Komunikatów (Message Queues):** Obsługa zamówień specjalnych składanych przez klientów przy użyciu tabletów.
-* **Sygnały Systemowe:** Sterowanie tempem pracy kucharza (`SIGUSR1/2`) oraz procedura natychmiastowej ewakuacji (`SIGRTMIN`).
+Projekt wykorzystuje zaawansowane mechanizmy komunikacji międzyprocesowej (System V IPC) oraz synchronizację wątków. Konfiguracja lokalu jest zdefiniowana centralnie w pliku `common.h`.
 
----
+### 1. Pamięć Współdzielona (Shared Memory)
+Wspólny obszar pamięci przechowuje stan świata dostępny dla wszystkich procesów:
+* **`BeltSlot belt[P]`**: Taśma z posiłkami (dostęp chroniony mutexem).
+* **`table_capacity` / `current_occupancy`**: Tablice monitorujące obłożenie każdego stolika/miejsca.
+* **`stats_*`**: Globalne statystyki finansowe (sprzedaż, koszty produkcji, napiwki).
+* **Flagi sterujące**: `open` (czy lokal otwarty), `emergency_exit` (ewakuacja).
 
+### 2. Semafory (System V Semaphores)
+System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchronizacji:
 
+| ID | Rola | Opis działania |
+| :--- | :--- | :--- |
+| **0** | **Mutex Taśmy** | Binarny (0/1). Blokuje dostęp do edycji taśmy podczas nakładania/zdejmowania dań. |
+| **1** | **Sygnał Kucharza** | Kucharz oczekuje na tym semaforze (wartość 0). Klient podbija go (+1), by zlecić zamówienie. |
+| **2** | **Licznik 2-os** | Sem. licznikowy. Przechowuje liczbę wolnych miejsc w strefie stolików 2-osobowych. |
+| **3** | **Licznik 3-os** | Sem. licznikowy dla stolików 3-osobowych. |
+| **4** | **Licznik 4-os** | Sem. licznikowy dla stolików 4-osobowych. |
+| **5** | **Mutex Kasjera** | Binarny (0/1). Zapewnia atomowość operacji dodawania utargu do statystyk globalnych. |
+| **6** | **Licznik Lady** | Sem. licznikowy. Liczba wolnych miejsc przy barze (Lada). |
+| **7** | **Licznik 1-os** | Sem. licznikowy. Liczba wolnych stolików 1-osobowych. |
+
+### 3. Kolejki Komunikatów (Message Queues)
+* **Cel:** Obsługa asynchronicznych **Zamówień Specjalnych**.
+* **Działanie:** Klient wysyła strukturę `SpecialOrder` (PID + cena). Wykorzystana flaga `IPC_NOWAIT` zapobiega blokowaniu klienta w przypadku przepełnienia kuchni.
+
+### 4. Wątki (Pthreads)
+* **Kontekst:** Działają wewnątrz procesu `./klient`.
+* **Rola:** Symulują poszczególne osoby w grupie siedzące przy jednym stoliku.
+* **Synchronizacja:** Lokalny `pthread_mutex_t group_lock` chroni wspólny rachunek grupy oraz licznik zjedzonych posiłków przed *race condition*.
 
 
 

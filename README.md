@@ -57,7 +57,7 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 | :--- | :--- | :--- |
 | **0** | **Mutex Taśmy** | Binarny (0/1). Blokuje dostęp do edycji taśmy podczas nakładania/zdejmowania dań. |
 | **1** | **Sygnał Kucharza** | Kucharz oczekuje na tym semaforze (wartość 0). Klient podbija go (+1), by zlecić zamówienie. |
-| **2** | **Licznik 2-os** | Sem. licznikowy. Przechowuje liczbę wolnych miejsc w strefie stolików 2-osobowych. |
+| **2** | **Licznik 2-os** | Sem. licznikowy dla stolików 2-osobowych. |
 | **3** | **Licznik 3-os** | Sem. licznikowy dla stolików 3-osobowych. |
 | **4** | **Licznik 4-os** | Sem. licznikowy dla stolików 4-osobowych. |
 | **5** | **Mutex Kasjera** | Binarny (0/1). Zapewnia atomowość operacji dodawania utargu do statystyk globalnych. |
@@ -78,13 +78,76 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 
 ## Functional Tests
 
-| ID | Nazwa Testu | Cel i Scenariusz | Oczekiwany Rezultat (Brak błędu) |
-| :--- | :--- | :--- | :--- |
-| **T1** | **Weryfikacja Opieki nad Dziećmi (Odmowa Wstępu)** | **Scenariusz:** Uruchomienie grupy (np. 4-osobowej), w której losowanie przydzieliło same dzieci (wiek < 10 lat) lub zbyt mało dorosłych (np. 4 dzieci, 1 dorosły). <br> **Cel:** Sprawdzenie, czy system blokuje wejście takiej grupie. | Program wypisuje czerwony komunikat: **`[System] ODMOWA WSTĘPU! Za mało opiekunów.`** oraz szczegóły (ile dzieci, ile dorosłych). Proces klienta kończy się (`exit(0)`) i nie zajmuje stolika. |
-| **T2** | **Logika Współdzielenia Stolików** | **Scenariusz:** Do stolika 4-osobowego (np. index 16) siada grupa 2-osobowa. Następnie wchodzi kolejna grupa 2-osobowa, która wylosuje ten sam typ stolika. <br> **Cel:** Sprawdzenie, czy semafory i pętla szukania pozwalają na dosiadanie. | Druga grupa otrzymuje ten sam numer stolika (np. 16) i komunikat **`DOSIADA SIĘ`**. W pamięci współdzielonej (podgląd np. przez debug) zajętość stolika wzrasta do 4. Obie grupy jedzą równolegle. |
-| **T3** | **Losowość Przydziału Stref (1-os i 2-os)** | **Scenariusz:** Wpuszczenie serii klientów 1-osobowych i 2-osobowych. <br> **Cel:** Weryfikacja algorytmu losowania (`rand() % 100`) w `klient.c`. | Klienci 1-os trafiają losowo do stolików 2-os (40%), 3-os (30%) lub 4-os (30%). Klienci 2-os trafiają losowo do stolików 2-os (50%) lub 4-os (50%). Widać to po numerach stolików w logach. |
-| **T4** | **Weryfikacja Celu Konsumpcji** | **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 5 dań). <br> **Cel:** Sprawdzenie, czy klient opuszcza stolik po zjedzeniu wyznaczonej liczby posiłków. | W komunikacie końcowym klienta widnieje status **`Najedzeni`** (jeśli `eaten_total >= target`). W logach startowych widać: `>> Wielkosc: X os. CEL DO ZJEDZENIA: 5 DAN.` |
-| **T5** | **Poprawność Raportu Finansowego** | **Scenariusz:** Klient VIP zamawia danie specjalne i zostawia napiwek. Zwykli klienci jedzą dania standardowe. <br> **Cel:** Weryfikacja sumowania przychodów przez `Main`. | W raporcie końcowym w sekcji "Przychody": suma sprzedaży dań standardowych + specjalnych + napiwków zgadza się z "Całkowitym Przychodem". Nie ma rozbieżności w księgowaniu. |
+Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalności systemu. Każdy test opatrzony jest dowodem działania.
+
+### T1: Weryfikacja Opieki nad Dziećmi (Odmowa Wstępu)
+* **Cel:** Sprawdzenie, czy system blokuje wejście grupie, która nie spełnia wymogu opieki (minimum 1 dorosły na każde rozpoczęte 3 dzieci).
+* **Scenariusz:** Uruchomienie grupy (np. 4-osobowej), w której losowanie przydzieliło same dzieci (wiek < 10 lat) lub zbyt mało dorosłych (np. 4 dzieci, 1 dorosły).
+* **Oczekiwany Rezultat:**
+  1. Program wypisuje czerwony komunikat: `[System] ODMOWA WSTĘPU! Za mało opiekunów.`
+  2. W komunikacie widać szczegóły grupy (wiek uczestników).
+  3. Proces klienta kończy się natychmiast (`exit(0)`) i nie zajmuje zasobów.
+
+> **Dowód działania:**
+>
+> ![T1 - Odmowa Wstępu](img/test_t1.png)
+
+---
+
+### T2: Logika Współdzielenia Stolików
+* **Cel:** Sprawdzenie, czy semafory i algorytm wyszukiwania pozwalają na dosiadanie się grup do częściowo zajętych stolików.
+* **Scenariusz:**
+  1. Do stolika 4-osobowego (np. o indeksie 16) siada pierwsza grupa 2-osobowa.
+  2. Wchodzi kolejna grupa 2-osobowa, która wylosuje ten sam typ stolika/strefę.
+* **Oczekiwany Rezultat:**
+  1. Druga grupa otrzymuje ten sam numer stolika co pierwsza (np. nr 16).
+  2. Pojawia się komunikat: `DOSIADA SIĘ do stolika nr 16`.
+  3. Obie grupy jedzą równolegle, a zajętość stolika w pamięci współdzielonej wynosi 4/4.
+
+> **Dowód działania:**
+>
+> ![T2 - Dosiadanie się](img/test_t2.png)
+
+---
+
+### T3: Losowość Przydziału Stref
+* **Cel:** Weryfikacja algorytmu losowania (`rand() % 100`) w pliku `klient.c` – czy klienci są rozkładani po różnych strefach.
+* **Scenariusz:** Wpuszczenie serii klientów 1-osobowych i 2-osobowych w krótkim odstępie czasu.
+* **Oczekiwany Rezultat:**
+  1. Klienci 1-os trafiają losowo do stolików 2-os, 3-os lub 4-os (zgodnie z wagami procentowymi).
+  2. Klienci 2-os trafiają losowo do stolików 2-os lub 4-os.
+  3. W logach widać różne numery stolików i różne pojemności dla grup o tym samym rozmiarze.
+
+> **Dowód działania:**
+>
+> ![T3 - Losowość Stref](img/test_t3.png)
+
+---
+
+### T4: Weryfikacja Celu Konsumpcji
+* **Cel:** Sprawdzenie, czy klient poprawnie realizuje cykl życia: jedzenie -> osiągnięcie celu -> zwolnienie stolika.
+* **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 5 dań).
+* **Oczekiwany Rezultat:**
+  1. W logu startowym widać: `>> Wielkosc: X os. CEL DO ZJEDZENIA: 5 DAN.`
+  2. Klient zjada dokładnie tyle dań (lub więcej, jeśli kończył równocześnie z innymi).
+  3. W komunikacie końcowym (po wyjściu) widnieje status `Najedzeni` oraz poprawna kwota rachunku.
+
+> **Dowód działania:**
+>
+> ![T4 - Cel Konsumpcji](img/test_t4.png)
+
+---
+
+### T5: Poprawność Raportu Finansowego
+* **Cel:** Weryfikacja, czy proces `Main` poprawnie sumuje przychody ze wszystkich źródeł (sprzedaż standardowa, specjalna, napiwki).
+* **Scenariusz:** Symulacja z udziałem klientów VIP (zamawiających dania specjalne i dających napiwki) oraz zwykłych klientów.
+* **Oczekiwany Rezultat:**
+  1. W raporcie końcowym wyświetlanym po zamknięciu lokalu sumy się zgadzają.
+  2. Równanie: `Sprzedaż Dań Podstawowych` + `Sprzedaż Dań Specjalnych` + `Napiwki` = `CAŁKOWITY PRZYCHÓD`.
+
+> **Dowód działania:**
+>
+> ![T5 - Raport Finansowy](img/test_t5.png)
 
 ---
 

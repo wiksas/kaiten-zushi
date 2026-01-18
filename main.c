@@ -61,7 +61,7 @@ int main() {
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
     sdata->start_time = 600;
-    sdata->end_time = 1320;
+    sdata->end_time = 660;
     sdata->current_time = sdata->start_time;
     sdata->open = true;
     sdata->emergency_exit = false;
@@ -145,6 +145,7 @@ while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
                 
+
                 execl("./klient", "klient", s, v, NULL);
                 perror("[Main] Blad execl");
                 exit(1);
@@ -152,7 +153,6 @@ while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_
             
             if (pid > 0) {
                 client_count++;
-
             }
         }
     }

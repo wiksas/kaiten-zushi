@@ -50,6 +50,11 @@ Wspólny obszar pamięci przechowuje stan świata dostępny dla wszystkich proce
 * **`stats_*`**: Globalne statystyki finansowe (sprzedaż, koszty produkcji, napiwki).
 * **Flagi sterujące**: `open` (czy lokal otwarty), `emergency_exit` (ewakuacja).
 
+
+> **Link do kodu (implementacja):**
+>
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
+
 ### 2. Semafory (System V Semaphores)
 System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchronizacji:
 
@@ -64,16 +69,27 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 | **6** | **Licznik Lady** | Sem. licznikowy. Liczba wolnych miejsc przy barze (Lada). |
 | **7** | **Licznik 1-os** | Sem. licznikowy dla stolików 1-osobowych. |
 
+
+> **Link do kodu (implementacja):**
+>
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99-L110)
+
 ### 3. Kolejki Komunikatów (Message Queues)
 * **Cel:** Obsługa asynchronicznych **Zamówień Specjalnych**.
 * **Działanie:** Klient wysyła strukturę `SpecialOrder` (PID + cena). Wykorzystana flaga `IPC_NOWAIT` zapobiega blokowaniu klienta w przypadku przepełnienia kuchni.
+
+> **Link do kodu (implementacja):**
+>
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
 
 ### 4. Wątki (Pthreads)
 * **Kontekst:** Działają wewnątrz procesu `./klient`.
 * **Rola:** Symulują poszczególne osoby w grupie siedzące przy jednym stoliku.
 * **Synchronizacja:** Lokalny `pthread_mutex_t group_lock` chroni wspólny rachunek grupy oraz licznik zjedzonych posiłków przed *race condition*.
 
-
+> **Link do kodu (implementacja):**
+>
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
 
 
 ## Functional Tests
@@ -90,7 +106,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T1 - Odmowa Wstępu](img/test_t.1.png)
+> ![T1 - Odmowa Wstępu](img/t_1.png)
 
 ---
 
@@ -106,8 +122,8 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T2 - Dosiadanie się](img/test_t_2.1.png)
-> ![T2 - Dosiadanie się](img/test_t_2.2.png)
+> ![T2 - Dosiadanie się](img/t_2.1.png)
+> ![T2 - Dosiadanie się](img/t_2.2.png)
 
 ---
 
@@ -123,7 +139,8 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T3 - Cel Konsumpcji](img/test_t.3.png)
+> ![T3 - Cel Konsumpcji](img/t_3.1.png)
+> ![T3 - Cel Konsumpcji](img/t_3.2.png)
 
 ---
 
@@ -136,7 +153,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T4 - Raport Finansowy](img/test_t.4.png)
+> ![T4 - Raport Finansowy](img/t_4.png)
 
 ---
 

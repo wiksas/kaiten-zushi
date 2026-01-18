@@ -157,7 +157,6 @@ int main(int argc, char** argv) {
     is_vip_global = atoi(argv[2]);
 
     target_to_eat = 3 + (rand() % 8);
-    if (is_vip_global) target_to_eat += 2;
 
     PersonInfo info[group_size];
     for (int i = 0; i < group_size; i++) { info[i].id = i + 1; info[i].age = (rand() % 60) + 1; }

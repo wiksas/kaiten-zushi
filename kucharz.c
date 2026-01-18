@@ -35,7 +35,7 @@ int main() {
 
     if (sd->kitchen_delay_us == 0) sd->kitchen_delay_us = 100000;
 
-    printf("[Kucharz] Gotowy (Opti-mode). Czekam na miejsce na tasmie.\n");
+    printf("[Kucharz] Gotowy. Czekam na miejsce na tasmie.\n");
 
     while (sd->open && !sd->emergency_exit) {
         SpecialOrder order;

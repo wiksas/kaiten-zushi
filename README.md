@@ -62,7 +62,7 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 | **4** | **Licznik 4-os** | Sem. licznikowy dla stolików 4-osobowych. |
 | **5** | **Mutex Kasjera** | Binarny (0/1). Zapewnia atomowość operacji dodawania utargu do statystyk globalnych. |
 | **6** | **Licznik Lady** | Sem. licznikowy. Liczba wolnych miejsc przy barze (Lada). |
-| **7** | **Licznik 1-os** | Sem. licznikowy. Liczba wolnych stolików 1-osobowych. |
+| **7** | **Licznik 1-os** | Sem. licznikowy dla stolików 1-osobowych. |
 
 ### 3. Kolejki Komunikatów (Message Queues)
 * **Cel:** Obsługa asynchronicznych **Zamówień Specjalnych**.
@@ -82,7 +82,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 ### T1: Weryfikacja Opieki nad Dziećmi (Odmowa Wstępu)
 * **Cel:** Sprawdzenie, czy system blokuje wejście grupie, która nie spełnia wymogu opieki (minimum 1 dorosły na każde rozpoczęte 3 dzieci).
-* **Scenariusz:** Uruchomienie grupy (np. 4-osobowej), w której losowanie przydzieliło same dzieci (wiek < 10 lat) lub zbyt mało dorosłych (np. 4 dzieci, 1 dorosły).
+* **Scenariusz:** Uruchomienie grupy , w której losowanie przydzieliło same dzieci (wiek < 10 lat).
 * **Oczekiwany Rezultat:**
   1. Program wypisuje czerwony komunikat: `[System] ODMOWA WSTĘPU! Za mało opiekunów.`
   2. W komunikacie widać szczegóły grupy (wiek uczestników).
@@ -90,7 +90,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T1 - Odmowa Wstępu](img/test_t1.png)
+> ![T1 - Odmowa Wstępu](img/test_t_1.png)
 
 ---
 
@@ -106,27 +106,16 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T2 - Dosiadanie się](img/test_t2.png)
+> ![T2 - Dosiadanie się](img/test_t_2.1.png)
+> ![T2 - Dosiadanie się](img/test_t_2.2.png)
 
 ---
 
-### T3: Losowość Przydziału Stref
-* **Cel:** Weryfikacja algorytmu losowania (`rand() % 100`) w pliku `klient.c` – czy klienci są rozkładani po różnych strefach.
-* **Scenariusz:** Wpuszczenie serii klientów 1-osobowych i 2-osobowych w krótkim odstępie czasu.
-* **Oczekiwany Rezultat:**
-  1. Klienci 1-os trafiają losowo do stolików 2-os, 3-os lub 4-os (zgodnie z wagami procentowymi).
-  2. Klienci 2-os trafiają losowo do stolików 2-os lub 4-os.
-  3. W logach widać różne numery stolików i różne pojemności dla grup o tym samym rozmiarze.
 
-> **Dowód działania:**
->
-> ![T3 - Losowość Stref](img/test_t3.png)
 
----
-
-### T4: Weryfikacja Celu Konsumpcji
+### T3: Weryfikacja Celu Konsumpcji
 * **Cel:** Sprawdzenie, czy klient poprawnie realizuje cykl życia: jedzenie -> osiągnięcie celu -> zwolnienie stolika.
-* **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 5 dań).
+* **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 4 dań).
 * **Oczekiwany Rezultat:**
   1. W logu startowym widać: `>> Wielkosc: X os. CEL DO ZJEDZENIA: 5 DAN.`
   2. Klient zjada dokładnie tyle dań (lub więcej, jeśli kończył równocześnie z innymi).
@@ -134,11 +123,11 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T4 - Cel Konsumpcji](img/test_t4.png)
+> ![T3 - Cel Konsumpcji](img/test_t_3.png)
 
 ---
 
-### T5: Poprawność Raportu Finansowego
+### T4: Poprawność Raportu Finansowego
 * **Cel:** Weryfikacja, czy proces `Main` poprawnie sumuje przychody ze wszystkich źródeł (sprzedaż standardowa, specjalna, napiwki).
 * **Scenariusz:** Symulacja z udziałem klientów VIP (zamawiających dania specjalne i dających napiwki) oraz zwykłych klientów.
 * **Oczekiwany Rezultat:**
@@ -147,7 +136,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T5 - Raport Finansowy](img/test_t5.png)
+> ![T4 - Raport Finansowy](img/test_t_4.png)
 
 ---
 

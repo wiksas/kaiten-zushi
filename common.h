@@ -17,8 +17,17 @@
 #include <time.h>
 #include <stdarg.h>
 
-#define P 20
-#define LADA_LIMIT 6 
+#define NUM_LADA 6 
+#define NUM_1OS  4 
+#define NUM_2OS  6
+#define NUM_3OS  4
+#define NUM_4OS  4
+#define P (NUM_LADA + NUM_1OS + NUM_2OS + NUM_3OS + NUM_4OS)
+#define czasstart  600
+#define czasstop  660
+
+#define MAX_CLIENTS 10000
+
 
 #define SHM_KEY 123456
 #define SEM_KEY 123457

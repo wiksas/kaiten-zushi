@@ -60,8 +60,8 @@ int main() {
     if (shmid == -1) { perror("shmget"); return 1; }
     sdata = (SharedData*)shmat(shmid, NULL, 0);
 
-    sdata->start_time = 600;
-    sdata->end_time = 660;
+    sdata->start_time = czasstart;
+    sdata->end_time = czasstop;
     sdata->current_time = sdata->start_time;
     sdata->open = true;
     sdata->emergency_exit = false;
@@ -141,7 +141,7 @@ while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_
             if (pid == 0) {
                 char s[3], v[2];
                 int g_size = (rand() % 4) + 1;
-                int is_vip = (rand() % 100 < 50);
+                int is_vip = (rand() % 100 < 2);
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
                 

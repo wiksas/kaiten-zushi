@@ -90,7 +90,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T1 - Odmowa Wstępu](img/test_t_1.png)
+> ![T1 - Odmowa Wstępu](img/test_t.1.png)
 
 ---
 
@@ -123,7 +123,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T3 - Cel Konsumpcji](img/test_t_3.png)
+> ![T3 - Cel Konsumpcji](img/test_t.3.png)
 
 ---
 
@@ -136,7 +136,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 > **Dowód działania:**
 >
-> ![T4 - Raport Finansowy](img/test_t_4.png)
+> ![T4 - Raport Finansowy](img/test_t.4.png)
 
 ---
 

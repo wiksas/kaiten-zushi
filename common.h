@@ -23,8 +23,10 @@
 #define NUM_3OS  4
 #define NUM_4OS  4
 #define P (NUM_LADA + NUM_1OS + NUM_2OS + NUM_3OS + NUM_4OS)
+
 #define czasstart  600
 #define czasstop  660
+#define iloscczasunasekunde 1
 
 #define MAX_CLIENTS 10000
 

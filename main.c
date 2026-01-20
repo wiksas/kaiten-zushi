@@ -116,18 +116,30 @@ int main() {
     int client_count = 0;
     printf("[Main] RESTAURACJA OTWARTA.\n");
 
-while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_request) {
+time_t real_start_timestamp = time(NULL);
+
+    while (!sdata->emergency_exit && !stop_request) {
+
+        time_t now = time(NULL);
+        double seconds_passed = difftime(now, real_start_timestamp);
+
+
+        sdata->current_time = sdata->start_time + (int)(seconds_passed * iloscczasunasekunde);
 
         usleep(1000000); 
         
-        if (sdata->current_time >= sdata->end_time || sdata->emergency_exit || stop_request) break;
+        if (sdata->current_time >= sdata->end_time) {
+            printf("\n\033[1;33m[Main] WYBIŁA GODZINA ZAMKNIĘCIA (%02d:%02d)! Zamykamy wejście.\033[0m\n", 
+                   sdata->end_time / 60, sdata->end_time % 60);
+            break; 
+        }
 
         if (client_count >= MAX_CLIENTS) {
             printf("\033[1;31m[Main] WYJATEK: Osiagnieto limit %d procesow klientow! Zamykam wejscie.\033[0m\n", MAX_CLIENTS);
-            
             sdata->is_closed_for_new = true; 
             break; 
         }
+
 
         if ((rand() % 100) < 30) {
             pid_t pid = fork();
@@ -145,7 +157,6 @@ while (sdata->current_time < sdata->end_time && !sdata->emergency_exit && !stop_
                 sprintf(s, "%d", g_size);
                 sprintf(v, "%d", is_vip);
                 
-
                 execl("./klient", "klient", s, v, NULL);
                 perror("[Main] Blad execl");
                 exit(1);

@@ -82,23 +82,27 @@ void* person(void* arg) {
 
     if (!sitting_at_bar && (rand() % 100 < chance)) {
         SpecialOrder order;
-        order.mtype = getpid();
+        order.mtype = getpid(); // Typ komunikatu to PID grupy
         int base_price_idx = is_vip_global ? (rand() % 3) : 0;
         int prices[] = { 40, 50, 60 };
         order.price = prices[base_price_idx];
-
-        if (msgsnd(msgid, &order, sizeof(int), IPC_NOWAIT) == 0) {
+        if (msgsnd(msgid, &order, sizeof(int), 0) == 0) {
+            
             printf("\033[1;35m[Klient %d-%d] >> ZAMAWIA DANIE SPECJALNE (Koszt: %d zl)\033[0m\n", 
                    getpid(), info->id, order.price);
 
             pthread_mutex_lock(&group_lock);
             pending_special_orders++;
             pthread_mutex_unlock(&group_lock);
+            
+        } else {
+
+            perror("Błąd wysyłania msg");
         }
     }
 
     while (!sdata->emergency_exit && (eaten_total < target_to_eat || pending_special_orders > 0)) {
-        usleep(100000 + (rand() % 200000));
+        // usleep(100000 + (rand() % 200000));
 
         sem_op(semid, 0, -1); 
 

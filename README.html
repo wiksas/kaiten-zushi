@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%F0%9F%8D%A3-kaiten-zushi">🍣 kaiten-zushi</h1>
+<h2 id="wiktor-sasnal">Wiktor Sasnal</h2>
+<p>Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej oraz mechanizmach komunikacji międzyprocesowej (IPC) w systemie Linux.</p>
+<h2 id="%F0%9F%93%82-spis-tre%C5%9Bci">📂 Spis treści</h2>
+<ul>
+<li><a href="#author">Author</a></li>
+<li><a href="#general-info">General Info</a></li>
+<li><a href="#technologies">Technologies</a></li>
+<li><a href="#architecture--ipc">Architecture &amp; IPC</a></li>
+<li><a href="#pseudo-codes">Pseudo-codes</a></li>
+<li><a href="#functional-tests">Functional Tests</a></li>
+<li><a href="#setup">Setup</a></li>
+</ul>
+<h1 id="author">Author</h1>
+<p><strong>Wiktor Sasnal</strong></p>
+<hr>
+<h2 id="general-info">General info</h2>
+<h3 id="1-za%C5%82o%C5%BCenia-projektowe-i-opis-kodu">1. Założenia projektowe i opis kodu</h3>
+<p>Celem projektu było stworzenie symulacji restauracji typu Kaiten-zushi, kładącej nacisk na synchronizację wielu procesów i wątków. Kod został podzielony na moduły: <code>main</code> (zarządca), <code>klient</code> (logika gości), <code>kucharz</code>, <code>obsługa</code> i <code>kierownik</code>. Zastosowano architekturę hybrydową, gdzie klienci są osobnymi procesami, a członkowie grupy – wątkami.</p>
+<h3 id="2-elementy-specjalne">2. Elementy specjalne</h3>
+<ul>
+<li><strong>VIP i Napiwki:</strong> Implementacja napiwków dla vipów jako dodatkowy przypływ gotówki nieuwzględniony w poleceniu.</li>
+</ul>
+<hr>
+<h2 id="technologies">Technologies</h2>
+<p align="center">
+<img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white" alt="C" />
+<img src="https://img.shields.io/badge/Pthreads-0078D4?style=for-the-badge&logo=gnu&logoColor=white" alt="Pthreads" />
+<img src="https://img.shields.io/badge/Processes-555555?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Processes" />
+<img src="https://img.shields.io/badge/SystemV_IPC-FF4500?style=for-the-badge&logo=linux&logoColor=white" alt="IPC" />
+</p>
+<hr>
+<h2 id="architecture--ipc">Architecture &amp; IPC</h2>
+<h3 id="a-tworzenie-i-obs%C5%82uga-plik%C3%B3w-file-io">A. Tworzenie i obsługa plików (File I/O)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L71-L87">Zapis logów do pliku (fopen/fprintf/fclose) - common.h</a></li>
+</ul>
+<h3 id="b-tworzenie-proces%C3%B3w-process-management">B. Tworzenie procesów (Process Management)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L145">Tworzenie procesu klienta (fork) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L112-L115">Uruchamianie programu np.klienta (execl) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L76">Kończenie procesu (exit) - klient.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L53-L57">Oczekiwanie na procesy potomne (zapobieganie zombie przez SA_NOCLDWAIT) - main.c</a></li>
+</ul>
+<h3 id="c-tworzenie-i-obs%C5%82uga-w%C4%85tk%C3%B3w-threads">C. Tworzenie i obsługa wątków (Threads)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L279">Tworzenie wątków osób w grupie (pthread_create) - klient.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L280">Oczekiwanie na wątki (pthread_join) - klient.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L94-L96">Synchronizacja wątków (pthread_mutex_lock/unlock) - klient.c</a></li>
+</ul>
+<h3 id="d-obs%C5%82uga-sygna%C5%82%C3%B3w-signals">D. Obsługa sygnałów (Signals)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L49-L50">Rejestracja obsługi SIGINT/SIGALRM (signal/sigaction) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L33-L35">Wysyłanie sygnałów do pracowników (kill) - main.c</a></li>
+</ul>
+<h3 id="e-synchronizacja-proces%C3%B3w-semaphores">E. Synchronizacja procesów (Semaphores)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99">Inicjalizacja zestawu semaforów (semget/semctl) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L91-L97">Operacje na semaforach (semop - funkcja pomocnicza) - common.h</a></li>
+</ul>
+<h3 id="f-pami%C4%99%C4%87-dzielona-shared-memory">F. Pamięć dzielona (Shared Memory)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L59">Utworzenie segmentu pamięci (shmget) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L61">Dołączenie pamięci do przestrzeni adresowej (shmat) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L39">Usunięcie segmentu (shmctl IPC_RMID) - main.c</a></li>
+</ul>
+<h3 id="g-kolejki-komunikat%C3%B3w-message-queues">G. Kolejki komunikatów (Message Queues)</h3>
+<ul>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L110">Utworzenie kolejki (msgget) - main.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L89">Wysłanie zamówienia specjalnego (msgsnd IPC_NOWAIT) - klient.c</a></li>
+<li><a href="https://github.com/wiksas/kaiten-zushi/blob/main/kucharz.c#L45">Odbiór zamówienia przez kucharza (msgrcv) - kucharz.c</a></li>
+</ul>
+<p>Projekt wykorzystuje zaawansowane mechanizmy komunikacji międzyprocesowej (System V IPC) oraz synchronizację wątków. Konfiguracja lokalu jest zdefiniowana centralnie w pliku <code>common.h</code>.</p>
+<h3 id="1-pami%C4%99%C4%87-wsp%C3%B3%C5%82dzielona-shared-memory">1. Pamięć Współdzielona (Shared Memory)</h3>
+<p>Wspólny obszar pamięci przechowuje stan świata dostępny dla wszystkich procesów:</p>
+<ul>
+<li><strong><code>BeltSlot belt[P]</code></strong>: Taśma z posiłkami (dostęp chroniony mutexem).</li>
+<li><strong><code>table_capacity</code> / <code>current_occupancy</code></strong>: Tablice monitorujące obłożenie każdego stolika/miejsca.</li>
+<li><strong><code>stats_*</code></strong>: Globalne statystyki finansowe (sprzedaż, koszty produkcji, napiwki).</li>
+<li><strong>Flagi sterujące</strong>: <code>open</code> (czy lokal otwarty), <code>emergency_exit</code> (ewakuacja).</li>
+</ul>
+<blockquote>
+<p><strong>Link do kodu (implementacja):</strong></p>
+<p><a href="https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L45-L68">Kliknij tutaj, aby zobaczyć kod</a></p>
+</blockquote>
+<h3 id="2-semafory-system-v-semaphores">2. Semafory (System V Semaphores)</h3>
+<p>System wykorzystuje zestaw <strong>8 semaforów</strong> do sterowania dostępem i synchronizacji:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">ID</th>
+<th style="text-align:left">Rola</th>
+<th style="text-align:left">Opis działania</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>0</strong></td>
+<td style="text-align:left"><strong>Mutex Taśmy</strong></td>
+<td style="text-align:left">Binarny (0/1). Blokuje dostęp do edycji taśmy podczas nakładania/zdejmowania dań.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>1</strong></td>
+<td style="text-align:left"><strong>Sygnał Kucharza</strong></td>
+<td style="text-align:left">Kucharz oczekuje na tym semaforze (wartość 0). Klient podbija go (+1), by zlecić zamówienie.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>2</strong></td>
+<td style="text-align:left"><strong>Licznik 2-os</strong></td>
+<td style="text-align:left">Sem. licznikowy dla stolików 2-osobowych.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>3</strong></td>
+<td style="text-align:left"><strong>Licznik 3-os</strong></td>
+<td style="text-align:left">Sem. licznikowy dla stolików 3-osobowych.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>4</strong></td>
+<td style="text-align:left"><strong>Licznik 4-os</strong></td>
+<td style="text-align:left">Sem. licznikowy dla stolików 4-osobowych.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>5</strong></td>
+<td style="text-align:left"><strong>Mutex Kasjera</strong></td>
+<td style="text-align:left">Binarny (0/1). Zapewnia atomowość operacji dodawania utargu do statystyk globalnych.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>6</strong></td>
+<td style="text-align:left"><strong>Licznik Lady</strong></td>
+<td style="text-align:left">Sem. licznikowy. Liczba wolnych miejsc przy barze (Lada).</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>7</strong></td>
+<td style="text-align:left"><strong>Licznik 1-os</strong></td>
+<td style="text-align:left">Sem. licznikowy dla stolików 1-osobowych.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Link do kodu (implementacja):</strong></p>
+<p><a href="https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99-L108">Kliknij tutaj, aby zobaczyć kod</a></p>
+</blockquote>
+<h3 id="3-kolejki-komunikat%C3%B3w-message-queues">3. Kolejki Komunikatów (Message Queues)</h3>
+<ul>
+<li><strong>Cel:</strong> Obsługa asynchronicznych <strong>Zamówień Specjalnych</strong>.</li>
+<li><strong>Działanie:</strong> Klient wysyła strukturę <code>SpecialOrder</code> (PID + cena). Wykorzystana flaga <code>IPC_NOWAIT</code> zapobiega blokowaniu klienta w przypadku przepełnienia kuchni.</li>
+</ul>
+<blockquote>
+<p><strong>Link do kodu (implementacja):</strong></p>
+<p><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L83-L89">Kliknij tutaj, aby zobaczyć kod</a></p>
+</blockquote>
+<h3 id="4-w%C4%85tki-pthreads">4. Wątki (Pthreads)</h3>
+<ul>
+<li><strong>Kontekst:</strong> Działają wewnątrz procesu <code>./klient</code>.</li>
+<li><strong>Rola:</strong> Symulują poszczególne osoby w grupie siedzące przy jednym stoliku.</li>
+<li><strong>Synchronizacja:</strong> Lokalny <code>pthread_mutex_t group_lock</code> chroni wspólny rachunek grupy oraz licznik zjedzonych posiłków przed <em>race condition</em>.</li>
+</ul>
+<blockquote>
+<p><strong>Link do kodu (implementacja):</strong></p>
+<p><a href="https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L128-L142">Kliknij tutaj, aby zobaczyć kod</a></p>
+</blockquote>
+<h2 id="functional-tests">Functional Tests</h2>
+<p>Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalności systemu. Każdy test opatrzony jest dowodem działania.</p>
+<h3 id="t1-weryfikacja-opieki-nad-dzie%C4%87mi-odmowa-wst%C4%99pu">T1: Weryfikacja Opieki nad Dziećmi (Odmowa Wstępu)</h3>
+<ul>
+<li><strong>Cel:</strong> Sprawdzenie, czy system blokuje wejście grupie, która nie spełnia wymogu opieki (minimum 1 dorosły na każde rozpoczęte 3 dzieci).</li>
+<li><strong>Scenariusz:</strong> Uruchomienie grupy , w której losowanie przydzieliło same dzieci (wiek &lt; 10 lat).</li>
+<li><strong>Oczekiwany Rezultat:</strong>
+<ol>
+<li>Program wypisuje czerwony komunikat: <code>[System] ODMOWA WSTĘPU! Za mało opiekunów.</code></li>
+<li>W komunikacie widać szczegóły grupy (wiek uczestników).</li>
+<li>Proces klienta kończy się natychmiast (<code>exit(0)</code>) i nie zajmuje zasobów.</li>
+</ol>
+</li>
+</ul>
+<blockquote>
+<p><strong>Dowód działania:</strong></p>
+<p><img src="img/t_1.png" alt="T1 - Odmowa Wstępu"></p>
+</blockquote>
+<hr>
+<h3 id="t2-logika-wsp%C3%B3%C5%82dzielenia-stolik%C3%B3w">T2: Logika Współdzielenia Stolików</h3>
+<ul>
+<li><strong>Cel:</strong> Sprawdzenie, czy semafory i algorytm wyszukiwania pozwalają na dosiadanie się grup do częściowo zajętych stolików.</li>
+<li><strong>Scenariusz:</strong>
+<ol>
+<li>Do stolika 4-osobowego (np. o indeksie 16) siada pierwsza grupa 2-osobowa.</li>
+<li>Wchodzi kolejna grupa 2-osobowa, która wylosuje ten sam typ stolika/strefę.</li>
+</ol>
+</li>
+<li><strong>Oczekiwany Rezultat:</strong>
+<ol>
+<li>Druga grupa otrzymuje ten sam numer stolika co pierwsza (np. nr 16).</li>
+<li>Pojawia się komunikat: <code>DOSIADA SIĘ do stolika nr 16</code>.</li>
+<li>Obie grupy jedzą równolegle, a zajętość stolika w pamięci współdzielonej wynosi 4/4.</li>
+</ol>
+</li>
+</ul>
+<blockquote>
+<p><strong>Dowód działania:</strong></p>
+<p><img src="img/t_2.1.png" alt="T2 - Dosiadanie się">
+<img src="img/t_2.2.png" alt="T2 - Dosiadanie się"></p>
+</blockquote>
+<hr>
+<h3 id="t3-weryfikacja-celu-konsumpcji">T3: Weryfikacja Celu Konsumpcji</h3>
+<ul>
+<li><strong>Cel:</strong> Sprawdzenie, czy klient poprawnie realizuje cykl życia: jedzenie -&gt; osiągnięcie celu -&gt; zwolnienie stolika.</li>
+<li><strong>Scenariusz:</strong> Klient otrzymuje losowy cel zjedzenia dań (zmienna <code>target_to_eat</code>, np. 4 dań).</li>
+<li><strong>Oczekiwany Rezultat:</strong>
+<ol>
+<li>W logu startowym widać: <code>&gt;&gt; Wielkosc: X os. CEL DO ZJEDZENIA: 5 DAN.</code></li>
+<li>Klient zjada dokładnie tyle dań (lub więcej, jeśli kończył równocześnie z innymi).</li>
+<li>W komunikacie końcowym (po wyjściu) widnieje status <code>Najedzeni</code> oraz poprawna kwota rachunku.</li>
+</ol>
+</li>
+</ul>
+<blockquote>
+<p><strong>Dowód działania:</strong></p>
+<p><img src="img/t_3.1.png" alt="T3 - Cel Konsumpcji">
+<img src="img/t_3.2.png" alt="T3 - Cel Konsumpcji"></p>
+</blockquote>
+<hr>
+<h3 id="t4-poprawno%C5%9B%C4%87-raportu-finansowego">T4: Poprawność Raportu Finansowego</h3>
+<ul>
+<li><strong>Cel:</strong> Weryfikacja, czy proces <code>Main</code> poprawnie sumuje przychody ze wszystkich źródeł (sprzedaż standardowa, specjalna, napiwki).</li>
+<li><strong>Scenariusz:</strong> Symulacja z udziałem klientów VIP (zamawiających dania specjalne i dających napiwki) oraz zwykłych klientów.</li>
+<li><strong>Oczekiwany Rezultat:</strong>
+<ol>
+<li>W raporcie końcowym wyświetlanym po zamknięciu lokalu sumy się zgadzają.</li>
+<li>Równanie: <code>Sprzedaż Dań Podstawowych</code> + <code>Sprzedaż Dań Specjalnych</code> + <code>Napiwki</code> = <code>CAŁKOWITY PRZYCHÓD</code>.</li>
+</ol>
+</li>
+</ul>
+<blockquote>
+<p><strong>Dowód działania:</strong></p>
+<p><img src="img/t_4.png" alt="T4 - Raport Finansowy"></p>
+</blockquote>
+<hr>
+<h2 id="setup">Setup</h2>
+<p>To run this project:</p>
+<h3 id="1-kompilacja-modu%C5%82%C3%B3w">1. Kompilacja modułów</h3>
+<p>Projekt można skompilować ręcznie przy użyciu poniższych komend:</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># Sklonuj repozytorium</span>
+git <span class="hljs-built_in">clone</span> https://github.com/wiksas/kaiten-zushi.git
+<span class="hljs-built_in">cd</span> kaiten-zushi
+
+<span class="hljs-comment"># Kompilacja ról systemowych</span>
+gcc kucharz.c -o kucharz
+gcc obsluga.c -o obsluga
+gcc kierownik.c -o kierownik
+
+<span class="hljs-comment"># Klient wymaga biblioteki pthread</span>
+gcc klient.c -o klient -lpthread
+
+<span class="hljs-comment"># Główny program</span>
+gcc main.c -o main
+</div></code></pre>
+<h1 id="uruchom-symulacj%C4%99-main">Uruchom symulację: <code>./main</code>.</h1>
+<h3 id="krok-2-wysy%C5%82anie-polece%C5%84">Krok 2: Wysyłanie poleceń</h3>
+<p>W nowym oknie terminala wyślij odpowiedni sygnał:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Akcja</th>
+<th style="text-align:left">Sygnał</th>
+<th style="text-align:left">Komenda terminala</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Przyspieszenie</strong></td>
+<td style="text-align:left">SIGUSR1</td>
+<td style="text-align:left">kill -USR1 &lt;PID_KIEROWNIKA&gt;</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Spowolnienie</strong></td>
+<td style="text-align:left">SIGUSR2</td>
+<td style="text-align:left">kill -USR2 &lt;PID_KIEROWNIKA&gt;</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Ewakuacja / Wyjście</strong></td>
+<td style="text-align:left">SIGALRM</td>
+<td style="text-align:left">kill -ALRM &lt;PID_KIEROWNIKA&gt;</td>
+</tr>
+</tbody>
+</table>
+<p><a href="https://wiksas.github.io/UIPortfolio/">Portfolio</a></p>
+
+</body>
+</html>

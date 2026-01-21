@@ -102,7 +102,7 @@ void* person(void* arg) {
     }
 
     while (!sdata->emergency_exit && (eaten_total < target_to_eat || pending_special_orders > 0)) {
-        // usleep(100000 + (rand() % 200000));
+        usleep(100000 + (rand() % 200000));
 
         sem_op(semid, 0, -1); 
 

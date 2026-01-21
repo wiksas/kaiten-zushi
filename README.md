@@ -1,34 +1,43 @@
 # 🍣 kaiten-zushi
 
+# [LINK DO GITHUB](https://github.com/wiksas/kaiten-zushi)
+
 ## Wiktor Sasnal
 
-Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej oraz mechanizmach komunikacji międzyprocesowej (IPC) w systemie Linux.
+Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej oraz mechanizmach komunikacji międzyprocesowej w systemie Linux.
+
 
 ## 📂 Spis treści
-- [Author](#author)
-- [General Info](#general-info)
-- [Technologies](#technologies)
-- [Architecture & IPC](#architecture--ipc)
-- [Pseudo-codes](#pseudo-codes)
-- [Functional Tests](#functional-tests)
-- [Setup](#setup)
+- [AUTOR](#autor)
+- [TEMAT PROJEKTU](#temat-projektu)
+- [INFORMACJE OGÓLNE](#informacje-ogólne)
+- [TECHNOLOGIE](#technologie)
+- [ARCHITEKTURA IPC](#architektura-ipc)
+- [TESTY](#testy)
+- [KONFIGURACJA](#konfiguracja)
 
-# Author  
+# AUTOR 
+
 **Wiktor Sasnal**
 
 ---
 
-## General info
-- **Symulacja Restauracji (C):** Aplikacja symuluje pełny cykl życia lokalu gastronomicznego w środowisku wieloprocesowym.
-- **Model Hybrydowy:** Główny proces (`main`) zarządza generowaniem klientów (procesy), wewnątrz których działają poszczególne osoby (wątki `pthread`).
-- **Logika Zajmowania Miejsc:** - Algorytm decyzyjny wybiera między **Ladą** (szybka konsumpcja, 1-os) a **Stolikami** (1, 2, 3 lub 4-osobowymi).
-    - Obsługa priorytetów dla **VIP** (brak kolejki, napiwki).
-    - Walidacja grup: wymagany 1 dorosły na każde rozpoczęte 3 dzieci.
-- **Bezpieczeństwo Systemu:** Wbudowany limit **10 000 procesów** (ochrona przed *fork bomb*) oraz procedura bezpiecznego zamykania (`SIGINT`) z oczekiwaniem na opróżnienie lokalu.
+## TEMAT PROJEKTU
+
+**Temat 1 - Restauracja „kaiten zushi”.**
 
 ---
 
-## Technologies
+## INFORMACJE OGÓLNE
+### 1. Założenia projektowe i opis kodu
+Celem projektu było stworzenie symulacji restauracji: Kaiten-zushi. Kod został podzielony na moduły: `main` (zarządca), `klient` (logika gości), `kucharz`, `obsługa` i `kierownik`.
+
+### 2. Elementy specjalne
+- **VIP i Napiwki:** Implementacja napiwków dla vipów jako dodatkowy przypływ gotówki nieuwzględniony w poleceniu.
+
+---
+
+## TECHNOLOGIE
 
 <p align="center">
 <img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white" alt="C" />
@@ -39,23 +48,51 @@ Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej
 
 ---
 
-## Architecture & IPC
 
-Projekt wykorzystuje zaawansowane mechanizmy komunikacji międzyprocesowej (System V IPC) oraz synchronizację wątków. Konfiguracja lokalu jest zdefiniowana centralnie w pliku `common.h`.
+## ARCHITEKTURA IPC
 
-### 1. Pamięć Współdzielona (Shared Memory)
+### A. Tworzenie i obsługa plików
+* [Zapis logów do pliku: common.h](https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L71-L87)
+
+### B. Tworzenie procesów
+* [Tworzenie procesu klienta: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L148)
+* [Uruchamianie programu np.klienta:  main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L115-L118)
+* [Kończenie procesu: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L76)
+* [Oczekiwanie na procesy potomne zombie: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L58-L62)
+
+### C. Tworzenie i obsługa wątków
+* [Tworzenie wątków osób w grupie: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L279)
+* [Oczekiwanie na wątki: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L280)
+* [Synchronizacja wątków: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L94-L96)
+
+### D. Obsługa sygnałów
+* [Rejestracja obsługi SIGINT/SIGALRM(signal/sigaction): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L52-L53)
+* [Wysyłanie sygnałów do pracowników(kill): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L36-L38)
+
+### E. Synchronizacja procesów
+* [Inicjalizacja zestawu semaforów (semget/semctl): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L102)
+* [Operacje na semaforach (semop - funkcja pomocnicza): common.h](https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L91-L97)
+
+### F. Pamięć dzielona
+* [Utworzenie segmentu pamięci (shmget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L62)
+* [Dołączenie pamięci do przestrzeni adresowej (shmat): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L64)
+* [Usunięcie segmentu (shmctl IPC_RMID): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L42)
+
+### G. Kolejki komunikatów
+* [Utworzenie kolejki (msgget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L113)
+* [Wysłanie zamówienia specjalnego (msgsnd IPC_NOWAIT): klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L89)
+* [Odbiór zamówienia przez kucharza (msgrcv): kucharz.c](https://github.com/wiksas/kaiten-zushi/blob/main/kucharz.c#L45)
+
+
+Implementacja struktur `IPC` dla zasady zadania projektowego
+
+### 1. Pamięć Współdzielona
 Wspólny obszar pamięci przechowuje stan świata dostępny dla wszystkich procesów:
-* **`BeltSlot belt[P]`**: Taśma z posiłkami (dostęp chroniony mutexem).
-* **`table_capacity` / `current_occupancy`**: Tablice monitorujące obłożenie każdego stolika/miejsca.
-* **`stats_*`**: Globalne statystyki finansowe (sprzedaż, koszty produkcji, napiwki).
-* **Flagi sterujące**: `open` (czy lokal otwarty), `emergency_exit` (ewakuacja).
-
 
 > **Link do kodu (implementacja):**
->
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L62-L64)
 
-### 2. Semafory (System V Semaphores)
+### 2. Semafory
 System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchronizacji:
 
 | ID | Rola | Opis działania |
@@ -66,33 +103,29 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 | **3** | **Licznik 3-os** | Sem. licznikowy dla stolików 3-osobowych. |
 | **4** | **Licznik 4-os** | Sem. licznikowy dla stolików 4-osobowych. |
 | **5** | **Mutex Kasjera** | Binarny (0/1). Zapewnia atomowość operacji dodawania utargu do statystyk globalnych. |
-| **6** | **Licznik Lady** | Sem. licznikowy. Liczba wolnych miejsc przy barze (Lada). |
+| **6** | **Licznik Lady** | Sem. licznikowy dla Lady. |
 | **7** | **Licznik 1-os** | Sem. licznikowy dla stolików 1-osobowych. |
 
+> **Link do kodu (implementacja):**
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L102-L111)
+
+### 3. Kolejki Komunikatów
+* **Cel:** Obsługa asynchronicznych Zamówień Specjalnych.
+* **Działanie:** Klient wysyła strukturę `SpecialOrder`.
 
 > **Link do kodu (implementacja):**
->
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99-L110)
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L83-L89)
 
-### 3. Kolejki Komunikatów (Message Queues)
-* **Cel:** Obsługa asynchronicznych **Zamówień Specjalnych**.
-* **Działanie:** Klient wysyła strukturę `SpecialOrder` (PID + cena). Wykorzystana flaga `IPC_NOWAIT` zapobiega blokowaniu klienta w przypadku przepełnienia kuchni.
-
-> **Link do kodu (implementacja):**
->
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
-
-### 4. Wątki (Pthreads)
+### 4. Wątki
 * **Kontekst:** Działają wewnątrz procesu `./klient`.
 * **Rola:** Symulują poszczególne osoby w grupie siedzące przy jednym stoliku.
-* **Synchronizacja:** Lokalny `pthread_mutex_t group_lock` chroni wspólny rachunek grupy oraz licznik zjedzonych posiłków przed *race condition*.
+* **Synchronizacja:** `pthread_mutex_t group_lock` chroni wspólny rachunek grupy oraz licznik zjedzonych posiłkow.
 
 > **Link do kodu (implementacja):**
->
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L135-L140)
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L128-L142)
 
 
-## Functional Tests
+## TESTY
 
 Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalności systemu. Każdy test opatrzony jest dowodem działania.
 
@@ -113,11 +146,11 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 ### T2: Logika Współdzielenia Stolików
 * **Cel:** Sprawdzenie, czy semafory i algorytm wyszukiwania pozwalają na dosiadanie się grup do częściowo zajętych stolików.
 * **Scenariusz:**
-  1. Do stolika 4-osobowego (np. o indeksie 16) siada pierwsza grupa 2-osobowa.
+  1. Do stolika 4-osobowego (np. o indeksie 21) siada pierwsza grupa 2-osobowa.
   2. Wchodzi kolejna grupa 2-osobowa, która wylosuje ten sam typ stolika/strefę.
 * **Oczekiwany Rezultat:**
-  1. Druga grupa otrzymuje ten sam numer stolika co pierwsza (np. nr 16).
-  2. Pojawia się komunikat: `DOSIADA SIĘ do stolika nr 16`.
+  1. Druga grupa otrzymuje ten sam numer stolika co pierwsza (np. nr 21).
+  2. Pojawia się komunikat: `DOSIADA SIĘ do stolika nr 21`.
   3. Obie grupy jedzą równolegle, a zajętość stolika w pamięci współdzielonej wynosi 4/4.
 
 > **Dowód działania:**
@@ -131,11 +164,11 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 ### T3: Weryfikacja Celu Konsumpcji
 * **Cel:** Sprawdzenie, czy klient poprawnie realizuje cykl życia: jedzenie -> osiągnięcie celu -> zwolnienie stolika.
-* **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 4 dań).
+* **Scenariusz:** Klient otrzymuje losowy cel zjedzenia dań (zmienna `target_to_eat`, np. 8 dań).
 * **Oczekiwany Rezultat:**
-  1. W logu startowym widać: `>> Wielkosc: X os. CEL DO ZJEDZENIA: 5 DAN.`
-  2. Klient zjada dokładnie tyle dań (lub więcej, jeśli kończył równocześnie z innymi).
-  3. W komunikacie końcowym (po wyjściu) widnieje status `Najedzeni` oraz poprawna kwota rachunku.
+  1. W logu startowym widać: `>> Wielkosc: X os. CEL DO ZJEDZENIA: 8 DAN.`
+  2. Klient zjada dokładnie tyle dań.
+  3. W komunikacie końcowym widnieje status `Najedzeni` oraz poprawna kwota rachunku.
 
 > **Dowód działania:**
 >
@@ -146,9 +179,9 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 ### T4: Poprawność Raportu Finansowego
 * **Cel:** Weryfikacja, czy proces `Main` poprawnie sumuje przychody ze wszystkich źródeł (sprzedaż standardowa, specjalna, napiwki).
-* **Scenariusz:** Symulacja z udziałem klientów VIP (zamawiających dania specjalne i dających napiwki) oraz zwykłych klientów.
+* **Scenariusz:** Symulacja z udziałem klientów VIP (dających napiwki) oraz zwykłych klientów.
 * **Oczekiwany Rezultat:**
-  1. W raporcie końcowym wyświetlanym po zamknięciu lokalu sumy się zgadzają.
+  1. sumy się zgadzają.
   2. Równanie: `Sprzedaż Dań Podstawowych` + `Sprzedaż Dań Specjalnych` + `Napiwki` = `CAŁKOWITY PRZYCHÓD`.
 
 > **Dowód działania:**
@@ -157,7 +190,7 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 
 ---
 
-## Setup  
+## KONFIGURACJA  
 To run this project:
 ### 1. Kompilacja modułów
 Projekt można skompilować ręcznie przy użyciu poniższych komend:
@@ -178,7 +211,6 @@ gcc klient.c -o klient -lpthread
 # Główny program
 gcc main.c -o main
 ```
-
 
 # Uruchom symulację: `./main`.
 

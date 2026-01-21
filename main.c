@@ -24,7 +24,10 @@ void handle_timeout(int sig) {
 
 void handle_sigint(int sig) {
     printf("\n\033[1;33m[Main] SIGINT. Koncze wpuszczanie.\033[0m\n");
-    if (sdata != NULL && sdata != (void*)-1) sdata->emergency_exit = true;
+    if (sdata != NULL && sdata != (void*)-1) {
+        sdata->emergency_exit = true;
+        sdata->is_closed_for_new = true;
+    }
     stop_request = 1;
 }
 
@@ -84,11 +87,11 @@ int main() {
         sdata->belt[i].target_table_pid = -1;
         sdata->current_occupancy[i] = 0;
         
-        if (i < th_lada)      sdata->table_capacity[i] = 1; // Lada
-        else if (i < th_1os)  sdata->table_capacity[i] = 1; // 1-os
-        else if (i < th_2os)  sdata->table_capacity[i] = 2; // 2-os
-        else if (i < th_3os)  sdata->table_capacity[i] = 3; // 3-os
-        else                  sdata->table_capacity[i] = 4; // 4-os
+        if (i < th_lada)      sdata->table_capacity[i] = 1;
+        else if (i < th_1os)  sdata->table_capacity[i] = 1;
+        else if (i < th_2os)  sdata->table_capacity[i] = 2;
+        else if (i < th_3os)  sdata->table_capacity[i] = 3;
+        else                  sdata->table_capacity[i] = 4;
     }
 
     printf("[Main] Konfiguracja Lokalu (Total: %d):\n", P);
@@ -201,12 +204,12 @@ time_t real_start_timestamp = time(NULL);
 
     printf("---------------------------------------\n");
     printf("[Kasjer] STATYSTYKA SPRZEDAZY:\n");
-    int przychod_std = 0;
-    for (int i = 0; i < 3; i++) przychod_std += sdata->stats_sold[i] * ceny[i];
-    printf(" - Sprzedaz Dan Podstawowych: %d zl\n", przychod_std);
+    int przychod = 0;
+    for (int i = 0; i < 3; i++) przychod += sdata->stats_sold[i] * ceny[i];
+    printf(" - Sprzedaz Dan Podstawowych: %d zl\n", przychod);
     printf(" - Sprzedaz Dan Specjalnych : %d zl\n", sdata->stats_special_revenue);
     printf(" - Napiwki (VIP)     : %d zl\n", sdata->stats_tips);
-    int utarg_total = przychod_std + sdata->stats_special_revenue + sdata->stats_tips;
+    int utarg_total = przychod + sdata->stats_special_revenue + sdata->stats_tips;
     printf(" CALKOWITY PRZYCHOD: %d zl\n", utarg_total);
 
     printf("---------------------------------------\n");

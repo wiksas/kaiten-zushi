@@ -234,10 +234,13 @@ make
 ### Krok 2: Wysyłanie poleceń
 W nowym oknie terminala wyślij odpowiedni sygnał:
 
+sprawdź pid kierownika: 
+```
+pgrep kierownik
+```
+
 | Akcja | Sygnał | Komenda terminala |
 | :--- | :--- | :--- |
 | **Przyspieszenie** | SIGUSR1 | kill -USR1 <PID_KIEROWNIKA> |
 | **Spowolnienie** | SIGUSR2 | kill -USR2 <PID_KIEROWNIKA> |
 | **Ewakuacja / Wyjście** | SIGALRM | kill -ALRM <PID_KIEROWNIKA> |
-
-[Portfolio](https://wiksas.github.io/UIPortfolio/)

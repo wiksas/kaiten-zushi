@@ -10,11 +10,11 @@ void handle_speed_signals(int sig) {
 
     if (sig == SIGUSR1) { 
         sd->kitchen_delay_us /= 2; 
-        if (sd->kitchen_delay_us < 10000) sd->kitchen_delay_us = 10000;
+        if (sd->kitchen_delay_us < 1000000) sd->kitchen_delay_us = 1000000;
         printf("\033[1;33m[Kucharz] Przyspieszam! (Delay: %d us)\033[0m\n", sd->kitchen_delay_us); 
     }
     else if (sig == SIGUSR2) { 
-        if (sd->kitchen_delay_us == 0) sd->kitchen_delay_us = 20000;
+        if (sd->kitchen_delay_us == 0) sd->kitchen_delay_us = 1000000;
         else sd->kitchen_delay_us *= 2; 
         printf("\033[1;33m[Kucharz] Zwalniam... (Delay: %d us)\033[0m\n", sd->kitchen_delay_us); 
     }
@@ -33,7 +33,7 @@ int main() {
     int msgid = msgget(MSG_KEY, 0600);
 
 
-    if (sd->kitchen_delay_us == 0) sd->kitchen_delay_us = 100000;
+    if (sd->kitchen_delay_us == 0) sd->kitchen_delay_us = 1000000;
 
     printf("[Kucharz] Gotowy. Czekam na miejsce na tasmie.\n");
 
@@ -46,7 +46,7 @@ int main() {
 
 
         int current_delay = sd->kitchen_delay_us;
-        if (current_delay < 10000) current_delay = 10000;
+        if (current_delay < 1000000) current_delay = 1000000;
         
         usleep(current_delay);
 

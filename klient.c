@@ -287,8 +287,7 @@ int main(int argc, char** argv) {
 
     print_bill();
 
-    printf("[Klient %d] Zbieramy się do wyjścia... (2s)\n", getpid());
-    sleep(2);
+    printf("[Klient %d] Zbieramy się do wyjścia...\n", getpid());
 
     sem_op(semid, sem_to_take, group_size);
 

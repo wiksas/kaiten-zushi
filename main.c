@@ -19,6 +19,7 @@ volatile sig_atomic_t stop_request = 0;
 
 void handle_sigint(int sig) {
     printf("\n\033[1;33m[Main] SIGINT. Koncze wpuszczanie.\033[0m\n");
+    sdata->emergency_exit = true;
     if (sdata != NULL && sdata != (void*)-1) {
         sdata->emergency_exit = true;
         sdata->is_closed_for_new = true;
@@ -148,7 +149,7 @@ time_t real_start_timestamp = time(NULL);
 
 
         if (client_count < MAX_CLIENTS) {
-            if ((rand() % 100) < 30) {
+            if ((rand() % 100) < 80) {
                 pid_t pid = fork();
                 if (pid == 0) {
                     char s[3], v[2];
@@ -178,9 +179,20 @@ time_t real_start_timestamp = time(NULL);
         sleep(1);
     }
 
-    sleep(1);
-    sdata->open = false;
+    printf("\n\033[1;33m[Main] Inicjuję procedurę zamknięcia...\033[0m\n");
+    sdata->is_closed_for_new = true;
+    sdata->open = false; 
+    sdata->emergency_exit = true;
+    
+    signal(SIGINT, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+    
+    system("killall -9 klient 2>/dev/null");
+    while (waitpid(-1, NULL, WNOHANG) > 0) {
+        continue;
+    }
 
+    sleep(1);
     printf("\n\033[1;32m=======================================\n");
     printf("        RAPORT KONCOWY DNIA          \n");
     printf("=======================================\033[0m\n");
@@ -217,7 +229,6 @@ time_t real_start_timestamp = time(NULL);
     }
     printf(" ZMARNOWANE JEDZENIE: %d zl\n", straty);
     printf("=======================================\n");
-
     cleanup_system();
     printf("[Main] System zamkniety poprawnie.\n");
     return 0;

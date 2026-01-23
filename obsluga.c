@@ -13,7 +13,7 @@ int main() {
     while (sdata->open && !sdata->emergency_exit) {
         
 
-        usleep(2000000); 
+        usleep(1000000); 
 
         sem_op(semid, 0, -1);
 

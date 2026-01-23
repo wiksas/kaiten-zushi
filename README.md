@@ -34,7 +34,7 @@ Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej
 ### 1. Założenia projektowe i opis kodu
 Celem projektu było stworzenie symulacji restauracji: Kaiten-zushi. Kod został podzielony na moduły: `main` (zarządca), `klient` (logika gości), `kucharz`, `obsługa` i `kierownik`.
 
-### 2. Elementy specjalne
+### 2. Elementy Dodatkowe
 - **VIP i Napiwki:** Implementacja napiwków dla vipów jako dodatkowy przypływ gotówki nieuwzględniony w poleceniu.
 
 ---
@@ -92,7 +92,7 @@ Implementacja struktur `IPC` dla zasady zadania projektowego
 Wspólny obszar pamięci przechowuje stan świata dostępny dla wszystkich procesów:
 
 > **Link do kodu (implementacja):**
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L62-L64)
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L59-L61)
 
 ### 2. Semafory
 System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchronizacji:
@@ -109,7 +109,7 @@ System wykorzystuje zestaw **8 semaforów** do sterowania dostępem i synchroniz
 | **7** | **Licznik 1-os** | Sem. licznikowy dla stolików 1-osobowych. |
 
 > **Link do kodu (implementacja):**
-> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L102-L111)
+> [Kliknij tutaj, aby zobaczyć kod](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99-L108)
 
 ### 3. Kolejki Komunikatów
 * **Cel:** Obsługa asynchronicznych Zamówień Specjalnych.
@@ -215,6 +215,19 @@ gcc klient.c -o klient -lpthread
 # Główny program
 gcc main.c -o main
 ```
+
+lub
+
+```bash
+# Sklonuj repozytorium
+git clone https://github.com/wiksas/kaiten-zushi.git
+cd kaiten-zushi
+
+make
+
+./main
+```
+
 
 # Uruchom symulację: `./main`.
 

@@ -16,11 +16,6 @@ pid_t kucharz_pid, obsluga_pid, kierownik_pid;
 
 volatile sig_atomic_t stop_request = 0;
 
-void handle_timeout(int sig) {
-    printf("\n\033[1;31m[Main] ALARM! Czas bezpieczenstwa minal.\033[0m\n");
-    if (sdata != NULL && sdata != (void*)-1) sdata->emergency_exit = true;
-    stop_request = 1;
-}
 
 void handle_sigint(int sig) {
     printf("\n\033[1;33m[Main] SIGINT. Koncze wpuszczanie.\033[0m\n");
@@ -32,6 +27,8 @@ void handle_sigint(int sig) {
 }
 
 void cleanup_system() {
+
+
     printf("[Main] Sprzatanie procesow pracownikow...\n");
     if (kucharz_pid > 0) kill(kucharz_pid, SIGTERM);
     if (obsluga_pid > 0) kill(obsluga_pid, SIGTERM);
@@ -42,6 +39,7 @@ void cleanup_system() {
     shmctl(shmid, IPC_RMID, NULL);
     semctl(semid, 0, IPC_RMID);
     msgctl(msgid, IPC_RMID, NULL);
+
     
     printf("[Main] Zasoby IPC usuniete.\n");
 }
@@ -50,13 +48,12 @@ int main() {
     srand(time(NULL));
     
     signal(SIGINT, handle_sigint);
-    signal(SIGALRM, handle_timeout);
 
     //zombie
     struct sigaction sa;
-    sa.sa_handler = SIG_IGN;
+    sa.sa_handler = SIG_DFL; 
     sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_NOCLDWAIT;
+    sa.sa_flags = 0; 
     sigaction(SIGCHLD, &sa, NULL);
 
     shmid = shmget(SHM_KEY, sizeof(SharedData), IPC_CREAT | 0600);
@@ -123,10 +120,16 @@ time_t real_start_timestamp = time(NULL);
 
     while (!sdata->emergency_exit && !stop_request) {
 
+        int status;
+        pid_t dead_child;
+        while ((dead_child = waitpid(-1, &status, WNOHANG)) > 0) {
+            if (dead_child != kucharz_pid && dead_child != obsluga_pid && dead_child != kierownik_pid) {
+                if (client_count > 0) client_count--;
+            }
+        }
+
         time_t now = time(NULL);
         double seconds_passed = difftime(now, real_start_timestamp);
-
-
         sdata->current_time = sdata->start_time + (int)(seconds_passed * iloscczasunasekunde);
 
         usleep(1000000); 
@@ -144,48 +147,39 @@ time_t real_start_timestamp = time(NULL);
         }
 
 
-        if ((rand() % 100) < 30) {
-            pid_t pid = fork();
-            
-            if (pid == -1) {
-                perror("[Main] Blad fork (brak zasobow)");
-                sdata->emergency_exit = true; 
-                break;
-            }
-            
-            if (pid == 0) {
-                char s[3], v[2];
-                int g_size = (rand() % 4) + 1;
-                int is_vip = (rand() % 100 < 2);
-                sprintf(s, "%d", g_size);
-                sprintf(v, "%d", is_vip);
-                
-                execl("./klient", "klient", s, v, NULL);
-                perror("[Main] Blad execl");
-                exit(1);
-            }
-            
-            if (pid > 0) {
-                client_count++;
+        if (client_count < MAX_CLIENTS) {
+            if ((rand() % 100) < 30) {
+                pid_t pid = fork();
+                if (pid == 0) {
+                    char s[3], v[2];
+                    int g_size = (rand() % 4) + 1;
+                    int is_vip = (rand() % 100 < 2);
+                    sprintf(s, "%d", g_size);
+                    sprintf(v, "%d", is_vip);
+                    execl("./klient", "klient", s, v, NULL);
+                    exit(1);
+                } else if (pid > 0) {
+                    client_count++;
+                }
             }
         }
     }
 
     sdata->is_closed_for_new = true;
-    printf("\n\033[1;33m[Main] ZAMYKAMY WEJSCIE. Czekam na opróżnienie lokalu...\033[0m\n");
+    printf("\n\033[1;33m[Main] OCZEKIWANIE NA OSTATNICH KLIENTÓW (%d procesów)...\033[0m\n", client_count);
 
-    while (1) {
-        int total_occupancy = 0;
-        struct sembuf sb_lock = {0, -1, 0}; semop(semid, &sb_lock, 1);
-        for(int i=0; i<P; i++) total_occupancy += sdata->current_occupancy[i];
-        struct sembuf sb_unlock = {0, 1, 0}; semop(semid, &sb_unlock, 1);
-
-        if (total_occupancy == 0) break;
-        sleep(1); 
+    while (client_count > 0 && !stop_request) {
+        int status;
+        while (waitpid(-1, &status, WNOHANG) > 0) {
+            client_count--;
+        }
+        if (client_count <= 0) break;
+        printf("[Main] Wciąż w środku: %d klientów...\n", client_count);
+        sleep(1);
     }
 
-    sdata->open = false;
     sleep(1);
+    sdata->open = false;
 
     printf("\n\033[1;32m=======================================\n");
     printf("        RAPORT KONCOWY DNIA          \n");

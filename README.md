@@ -2,6 +2,8 @@
 
 # [LINK DO GITHUB](https://github.com/wiksas/kaiten-zushi)
 
+### Użyty kompilator: TORUS
+
 ## Wiktor Sasnal
 
 Zaawansowana symulacja restauracji sushi oparta na architekturze wieloprocesowej oraz mechanizmach komunikacji międzyprocesowej w systemie Linux.
@@ -55,10 +57,10 @@ Celem projektu było stworzenie symulacji restauracji: Kaiten-zushi. Kod został
 * [Zapis logów do pliku: common.h](https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L71-L87)
 
 ### B. Tworzenie procesów
-* [Tworzenie procesu klienta: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L148)
-* [Uruchamianie programu np.klienta:  main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L115-L118)
+* [Tworzenie procesu klienta: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L152)
+* [Uruchamianie programu np.klienta:  main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L112-L114)
 * [Kończenie procesu: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L76)
-* [Oczekiwanie na procesy potomne zombie: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L58-L62)
+* [Oczekiwanie na procesy potomne zombie: main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L53-L57)
 
 ### C. Tworzenie i obsługa wątków
 * [Tworzenie wątków osób w grupie: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L279)
@@ -66,20 +68,20 @@ Celem projektu było stworzenie symulacji restauracji: Kaiten-zushi. Kod został
 * [Synchronizacja wątków: klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L94-L96)
 
 ### D. Obsługa sygnałów
-* [Rejestracja obsługi SIGINT/SIGALRM(signal/sigaction): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L52-L53)
-* [Wysyłanie sygnałów do pracowników(kill): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L36-L38)
+* [Rejestracja obsługi SIGINT/SIGALRM(signal/sigaction): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L50)
+* [Wysyłanie sygnałów do pracowników(kill): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L33-L35)
 
 ### E. Synchronizacja procesów
-* [Inicjalizacja zestawu semaforów (semget/semctl): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L102)
+* [Inicjalizacja zestawu semaforów (semget/semctl): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L99)
 * [Operacje na semaforach (semop - funkcja pomocnicza): common.h](https://github.com/wiksas/kaiten-zushi/blob/main/common.h#L91-L97)
 
 ### F. Pamięć dzielona
-* [Utworzenie segmentu pamięci (shmget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L62)
-* [Dołączenie pamięci do przestrzeni adresowej (shmat): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L64)
-* [Usunięcie segmentu (shmctl IPC_RMID): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L42)
+* [Utworzenie segmentu pamięci (shmget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L59)
+* [Dołączenie pamięci do przestrzeni adresowej (shmat): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L61)
+* [Usunięcie segmentu (shmctl IPC_RMID): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L39)
 
 ### G. Kolejki komunikatów
-* [Utworzenie kolejki (msgget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L113)
+* [Utworzenie kolejki (msgget): main.c](https://github.com/wiksas/kaiten-zushi/blob/main/main.c#L110)
 * [Wysłanie zamówienia specjalnego (msgsnd IPC_NOWAIT): klient.c](https://github.com/wiksas/kaiten-zushi/blob/main/klient.c#L89)
 * [Odbiór zamówienia przez kucharza (msgrcv): kucharz.c](https://github.com/wiksas/kaiten-zushi/blob/main/kucharz.c#L45)
 
@@ -188,9 +190,11 @@ Poniżej przedstawiono zestawienie testów weryfikujących kluczowe funkcjonalno
 >
 > ![T4 - Raport Finansowy](img/t_4.png)
 
+
 ---
 
 ## KONFIGURACJA  
+### Użyty kompilator: TORUS
 To run this project:
 ### 1. Kompilacja modułów
 Projekt można skompilować ręcznie przy użyciu poniższych komend:
